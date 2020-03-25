@@ -115,6 +115,7 @@ $(document).ready(function () {
         topic = "";
         difficulty = "";
         $(".card").removeClass("locked");
+        $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
         $("#topic").prop("selectedIndex", 0);
         $("#difficulty").prop('selectedIndex', 0);
@@ -132,9 +133,13 @@ $(document).ready(function () {
 
     // event listener for User card selection
     $(".card").click(function () {
-        // ignore clicks on cards already matched up
+        // ignore clicks on cards already matched up or in play
         if ($(this).hasClass("locked")) {
             console.log("card is locked: " + $(this).find("p").text());
+            return;
+        }
+        if ($(this).hasClass("in-play")) {
+            console.log("card is in-play: " + $(this).find("p").text());
             return;
         }
 
@@ -146,6 +151,7 @@ $(document).ready(function () {
         $(this).flip(true);
         if (isCardOne) {
             cardOne = $(this);
+            cardOne.addClass("in-play");
         } else {
             setTimeout(evaluateMatch, 1000, $(this));
         }
@@ -156,22 +162,28 @@ $(document).ready(function () {
         // this is the second card, lets compare the two
         var cardTwoID = cardTwo.find("img").attr("src");
         var cardOneID = cardOne.find("img").attr("src");
+        
         if (cardOneID === cardTwoID) {
             // a match, add some points!
             score += 5;
             matchesLeft--;
-
+            
             // and keep the cards from flipping again
             cardOne.addClass("locked");
             cardTwo.addClass("locked");
         } else {
             // uh-oh, lose some points
             score -= 1;
-
+            
             // flip the cards back for another try
             cardTwo.flip(false);
             cardOne.flip(false);
         }
+        
+        // whether it was a match or not, cardOne is no longer in-play
+        cardOne.removeClass("in-play");
+
+        // update on-screen score
         $("#score").text(score);
     }
 
