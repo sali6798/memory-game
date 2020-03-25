@@ -4,6 +4,19 @@ body {
     padding: 0;
 }
 
+h1 {
+    font-size: 48px;
+    margin: 0;
+}
+
+h3 {
+    font-size: 24px;
+}
+
+p {
+    font-size: 16px;
+}
+
 header {
     text-align: left;
 }
@@ -12,13 +25,16 @@ nav {
     text-align: center;
 }
 
+
 .hide {
     display: none;
 }
 
-.scoreTimer {
-    display: flex;
+.row {
+    margin-bottom: 0;
 }
+
+
 
 #hofLink {
     text-align: start;
@@ -48,9 +64,40 @@ nav {
 }
 
 #time i {
-    font-size: 48px;
+    font-size: 36px;
 }
 
 #nameContainer {
     margin-top: 0px;
+}
+
+.card img {
+    height: 150px;
+}
+
+@media screen and (max-width: 992px) {
+    .scoreTimer {
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .card img {
+        height: 100px;
+    }
+
+    .cardRow .s2 .card img {
+        height: 50px;
+    }
+
+    .cardRow .col {
+        padding: 3px;
+        margin: 0;
+    }
+
+    .cardRow .col .card{
+        margin: 0;
+    }
+
+
 }
