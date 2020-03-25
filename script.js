@@ -73,7 +73,6 @@ $(document).ready(function () {
         $("#landing").addClass("hide");
         $("#hof").addClass("hide");
         $("nav").removeClass("hide");
-        $("#back").removeClass("hide");
         $("#game").removeClass("hide");
 
         setTimerLength();
@@ -104,7 +103,7 @@ $(document).ready(function () {
     // otherwise display based on difficulty level saved (after user submits name)
     // MVP: just get leaderboard working
     function loadLeaderboard() {
-
+        // append to #leaderboardRows
     }
 
 
@@ -119,6 +118,7 @@ $(document).ready(function () {
         $("#overlay").removeClass("hide");
         $("#topic").prop("selectedIndex", 0);
         $("#difficulty").prop('selectedIndex', 0);
+        $("#lbOptions").prop('selectedIndex', 0);
         $('select').formSelect();
     }
 
@@ -126,7 +126,6 @@ $(document).ready(function () {
         reset();
         $("#leaderboard").addClass("hide");
         $("nav").addClass("hide");
-        $("#back").addClass("hide");
         $("#hof").removeClass("hide");
         $("#landing").removeClass("hide");
     }
@@ -183,6 +182,10 @@ $(document).ready(function () {
         $("#game").addClass("hide");
         loadLanding();
     });
+    $(".brand-logo").click(function() {
+        $("#game").addClass("hide");
+        loadLanding();
+    })
     // TODO: add user score to leaderboard
     $("#submit").click(function () {
         // gets user input for name

@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- FIXME: name TBD -->
-    <title>Memory Game</title>
+    <title>Frustration.</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link type="text/css" rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link type="text/css" rel="stylesheet" href="style.css">
@@ -14,16 +15,22 @@
 
 <body>
     <header>
-        <button id="hof" type="button"><i class="material-icons">stars</i> Hall of Fame</button>
+        <button id="hof" class="waves-effect waves-light btn" type="button"><i class="material-icons">stars</i> Hall of
+            Fame</button>
         <nav class="hide">
-            <h1>Memory Game</h1>
+            <div class="nav-wrapper">
+                <a href="#" class="brand-logo logo center">Frustration.</a>
+                <a href="#" id="back" class="left">
+                    < Go back</a>
+            </div>
         </nav>
     </header>
+
     <div class="container">
         <!-- div for landing page -->
         <div id="landing">
             <!-- FIXME: name TBD -->
-            <h1>Memory Game</h1>
+            <h1>Frustration.</h1>
             <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem doloribus, similique nulla iste nostrum
                 temporibus dolore perferendis amet sint ipsa repellat quod illum ipsam a aut laudantium corrupti sunt
                 cum.
@@ -36,7 +43,7 @@
                 <div class="input-field col m2 offset-m3">
                     <select id="topic" name="topic">
                         <option value="" selected disabled>topic</option>
-                        <option value="movies">Movies</option>
+                        <option value="movies">Landscapes</option>
                         <option value="dogs">Dogs</option>
                         <option value="cats">Cats</option>
                     </select>
@@ -123,6 +130,17 @@
 
 
 
+        <!-- div for end -->
+        <div id="end" class="hide">
+            <h1 id="endMessage"></h1>
+            <h3>Your score is: <span id="finalScore"></span></h3>
+            <div class="row">
+                <div id="nameContainer" class="input-field col m4 offset-s3 offset-m4">
+                    <input placeholder="Name" id="name" type="text">
+                    <label for="name">Enter your name for the leaderboard:</label>
+                </div>
+                <div class="col s12 m1 submitCol">
+                    <button id="submit" class="waves-effect waves-light btn" type="submit">Submit</button>
                 </div>
 
                 <!-- div for end -->
@@ -171,6 +189,22 @@
                     </div>
                     <button id="home" class="waves-effect waves-light btn" type="button">Home</button>
                 </div>
+    </div>
+
+    <!-- div for game -->
+    <div id="game" class="gameContainer hide">
+        <div id="overlay" class="valign-wrapper">
+            <h3><span class="logo">Frustration.</span> will start in... <span id="countdown"></span></h3>
+        </div>
+        <div class="row">
+            <!-- timer displays on the side on >= large screens and on top on less-->
+            <div class="col s12 l2 scoreTimer">
+                <h3>Score: <span id="score">0</span></h3>
+                <h3 id="time"><i class="medium material-icons">timer</i>: <span id="timer"></span></h3>
+            </div>
+            <!-- holds all the cards -->
+            <div id="cardsContainer" class="col s12 l10"></div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
