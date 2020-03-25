@@ -77,12 +77,13 @@ $(document).ready(function() {
         
         setTimerLength();
         $("#timer").text(timer);
+        $("#score").text(score)
         // TODO: create cards with API
         // size based on difficulty (global var)
 
 
         // if not topic chosen, val will be null - pick random topic
-        var topic = $("#topic").val();
+        topic = $("#topic").val();
 
         
 
@@ -119,6 +120,7 @@ $(document).ready(function() {
         $(".card").removeClass("locked");
         $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
+        $("#back").removeClass("hide");
         $("#topic").prop("selectedIndex", 0);
         $("#difficulty").prop('selectedIndex', 0);
         $("#lbOptions").prop('selectedIndex', 0);
