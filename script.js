@@ -7,6 +7,9 @@ $(document).ready(function() {
     var difficulty = "";
     var timer = 0;
     var score = 0;
+    var matchesLeft = 0;
+    var isCardOne = true;
+    var cardOne;
 
     //================== BELOW THIS IS BUTTON/GET INPUT VALUE EVENT LISTENERS ==================
 
@@ -38,7 +41,7 @@ $(document).ready(function() {
                 console.log("done");
             }
             
-            if (timer === 0) {
+            if (timer === 0 || matchesLeft === 0) {
                 clearInterval(timerInterval);
                 loadEndPage();
             }
@@ -51,15 +54,18 @@ $(document).ready(function() {
 
     function setTimerLength() {
         difficulty = $("#difficulty").val();
-        
+
         if (difficulty === "moderate") {
-            timer = 180;
+            timer = 150;    // 5x4: timer/matchesLeft === 15 seconds per match allowed
+            matchesLeft = 10;
         }
         else if (difficulty === "hard") {
-            timer = 200;
+            timer = 150;    // 6x5: timer/matchesLeft === 10 seconds per match allowed
+            matchesLeft = 15;
         }
         else {
-            timer = 120;
+            timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
+            matchesLeft = 6;
         }
     }
 
@@ -71,6 +77,7 @@ $(document).ready(function() {
         
         setTimerLength();
         $("#timer").text(timer);
+        $("#score").text(score)
         // TODO: create cards with API
         // size based on difficulty (global var)
 
@@ -106,8 +113,12 @@ $(document).ready(function() {
     function reset() {
         score = 0;
         timer = 0;
+        matchesLeft = 0;
+        isCardOne = true;
         topic = "";
         difficulty = "";
+        $(".card").removeClass("locked");
+        $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
         $("#back").removeClass("hide");
         $("#topic").prop("selectedIndex", 0);
@@ -122,6 +133,54 @@ $(document).ready(function() {
         $("nav").addClass("hide");
         $("#hof").removeClass("hide");
         $("#landing").removeClass("hide");
+    }    
+
+    // event listener for User card selection
+    $(".card").click(function () {
+        // ignore clicks on cards already matched up or in play
+        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
+            console.log("card is locked or in-play: " + $(this).find("p").text());
+            return;
+        }
+
+        // show the image 
+        $(this).flip(true);
+        if (isCardOne) {
+            cardOne = $(this);
+            cardOne.addClass("in-play");
+        } else {
+            setTimeout(evaluateMatch, 1000, $(this));
+        }
+        isCardOne = !isCardOne;
+    });
+
+    function evaluateMatch(cardTwo) {
+        // this is the second card, lets compare the two
+        var cardTwoID = cardTwo.find("img").attr("src");
+        var cardOneID = cardOne.find("img").attr("src");
+        
+        if (cardOneID === cardTwoID) {
+            // a match, add some points!
+            score += 5;
+            matchesLeft--;
+            
+            // and keep the cards from flipping again
+            cardOne.addClass("locked");
+            cardTwo.addClass("locked");
+        } else {
+            // uh-oh, lose some points
+            score -= 1;
+            
+            // flip the cards back for another try
+            cardTwo.flip(false);
+            cardOne.flip(false);
+        }
+        
+        // whether it was a match or not, cardOne is no longer in-play
+        cardOne.removeClass("in-play");
+
+        // update on-screen score
+        $("#score").text(score);
     }
 
     // event listeners
@@ -158,7 +217,9 @@ $(document).ready(function() {
    
     //================================== BELOW THIS IS API CALLS =========================================
        
-$(".card").flip();
+$(".card").flip({
+    trigger: 'manual'
+});
 // getPexelsDog();
 // getCat();
 getLandscape();
