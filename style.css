@@ -52,6 +52,10 @@ nav {
     font-family: 'Roboto Mono', monospace;
 }
 
+.logo:hover, #back:hover {
+    color: rgb(212, 212, 212);
+}
+
 .row {
     margin-bottom: 0;
 }
@@ -71,7 +75,12 @@ nav {
 
 .cardRow .col .card{
     margin: 0;
+    cursor: pointer;
 }
+
+/* .cardRow .col .card:hover{
+    box-shadow: ;
+} */
 
 .fourByThree {
     width: 25%;

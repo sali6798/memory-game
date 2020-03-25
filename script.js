@@ -76,7 +76,7 @@ $(document).ready(function() {
 
 
         // if not topic chosen, val will be null - pick random topic
-        var topic = $("#topic").val();
+        topic = $("#topic").val();
 
         
 
@@ -109,6 +109,7 @@ $(document).ready(function() {
         topic = "";
         difficulty = "";
         $("#overlay").removeClass("hide");
+        $("#back").removeClass("hide");
         $("#topic").prop("selectedIndex", 0);
         $("#difficulty").prop('selectedIndex', 0);
         $("#lbOptions").prop('selectedIndex', 0);
