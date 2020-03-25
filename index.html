@@ -25,9 +25,12 @@
             <!-- FIXME: name TBD -->
             <h1>Memory Game</h1>
             <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem doloribus, similique nulla iste nostrum
-                temporibus dolore perferendis amet sint ipsa repellat quod illum ipsam a aut laudantium corrupti sunt cum.
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi labore repudiandae expedita sit nobis id
-                fuga, error aliquid nulla fugit cum voluptatibus dolores doloribus tempora deleniti reiciendis repellat in
+                temporibus dolore perferendis amet sint ipsa repellat quod illum ipsam a aut laudantium corrupti sunt
+                cum.
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi labore repudiandae expedita sit nobis
+                id
+                fuga, error aliquid nulla fugit cum voluptatibus dolores doloribus tempora deleniti reiciendis repellat
+                in
                 similique?</p>
             <div class="row">
                 <div class="input-field col m2 offset-m3">
@@ -53,66 +56,121 @@
         </div>
 
         <!-- TODO: fix styling on link -->
-        <a href="#" id="back" class="hide">< Go back</a>
+        <a href="#" id="back" class="hide">
+            < Go back</a>
 
-        <!-- div for game -->
-        <div id="game" class="hide">
-            <div id="overlay" class="valign-wrapper">
-                <h3>The Game starts in... <span id="countdown"></span></h3>
-            </div>
-            <div class="scoreTimer">
-                <h3>Score: <span id="score">0</span></h3>
-                <h3 id="time"><i class="medium material-icons">timer</i>: <span id="timer"></span></h3>
-            </div>
-            
-        </div>
+                <!-- div for game -->
+                <div id="game" class="hide">
+                    <div id="overlay" class="valign-wrapper">
+                        <h3>The Game starts in... <span id="countdown"></span></h3>
+                    </div>
+                    <div class="scoreTimer">
+                        <h3>Score: <span id="score">0</span></h3>
+                        <h3 id="time"><i class="medium material-icons">timer</i>: <span id="timer"></span></h3>
+                    </div>
 
-        <!-- div for end -->
-        <div id="end" class="hide">
-            <h1 id="endMessage"></h1>
-            <h3>Your score is: <span id="finalScore"></span></h3>
-            <div class="row">
-                <div id="nameContainer" class="input-field col m4 offset-m4">
-                  <input placeholder="Name" id="name" type="text">
-                  <label for="name">Enter your name for the leaderboard:</label>
-                </div>
-                <div class="col s1">
-                    <button id="submit" class="waves-effect waves-light btn" type="submit">Submit</button>
-                </div>
-            </div>
-        </div>
+                    <!-- (diana) temporary cards...these are not real, feel free to delete this entire section -->
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>1A Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 1">Card 1A
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>2A Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 2">Card 2A
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>2B Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 2">Card 2B
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>1B Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 1">Card 1B
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>3A Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 3">Card 3A
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="front card-content">
+                            <p>3B Lorem ipsum</p>
+                        </div>
+                        <div class="back card-image" >
+                            <img src="Card 3">Card 3B
+                        </div>
+                    </div>
+                    <!-- end of temporary cards-->
+                    
 
-        <!-- div for leaderboard -->
-        <div id="leaderboard" class="hide">
-            <div class="row">
-                <div class="col s12">
-                    <h1>Hall of Fame</h1>
+
+
                 </div>
-            </div>
-            <div class="row" id="lbOptionsRow">
-                <div class="col s2 offset-s10">
-                    <select name="lbOptions" id="lbOptions">
-                        <option value="" disabled selected>Difficulty</option>
-                        <option value="easy">Easy</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="hard">Hard</option>
-                    </select>
+
+                <!-- div for end -->
+                <div id="end" class="hide">
+                    <h1 id="endMessage"></h1>
+                    <h3>Your score is: <span id="finalScore"></span></h3>
+                    <div class="row">
+                        <div id="nameContainer" class="input-field col m4 offset-m4">
+                            <input placeholder="Name" id="name" type="text">
+                            <label for="name">Enter your name for the leaderboard:</label>
+                        </div>
+                        <div class="col s1">
+                            <button id="submit" class="waves-effect waves-light btn" type="submit">Submit</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="row">
-                <table class="centered">
-                    <thead>
-                        <tr>
-                            <th>Ranking</th>
-                            <th>Name</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboardRows"></tbody>
-                </table>
-            </div>
-            <button id="home" class="waves-effect waves-light btn" type="button">Home</button>
-        </div>
+
+                <!-- div for leaderboard -->
+                <div id="leaderboard" class="hide">
+                    <div class="row">
+                        <div class="col s12">
+                            <h1>Hall of Fame</h1>
+                        </div>
+                    </div>
+                    <div class="row" id="lbOptionsRow">
+                        <div class="col s2 offset-s10">
+                            <select name="lbOptions" id="lbOptions">
+                                <option value="" disabled selected>Difficulty</option>
+                                <option value="easy">Easy</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <table class="centered">
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Name</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardRows"></tbody>
+                        </table>
+                    </div>
+                    <button id="home" class="waves-effect waves-light btn" type="button">Home</button>
+                </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
