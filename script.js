@@ -4,7 +4,7 @@ $(document).ready(function() {
 
     //====================== global variables ==========================================
     var topic = "";
-    var difficulty = "";
+    var difficulty = "easy";
     var timer = 0;
     var score = 0;
     var matchesLeft = 0;
@@ -53,16 +53,19 @@ $(document).ready(function() {
 
     function setTimerLength() {
         difficulty = $("#difficulty").val();
+        if (difficulty === null) {
+            difficulty = "easy";
+        }
 
         if (difficulty === "moderate") {
-            timer = 150; // 5x4: timer/matchesLeft === 15 seconds per match allowed
+            timer = 5; // 5x4: timer/matchesLeft === 15 seconds per match allowed
             matchesLeft = 10;
         } else if (difficulty === "hard") {
-            timer = 150; // 6x5: timer/matchesLeft === 10 seconds per match allowed
+            timer = 5; // 6x5: timer/matchesLeft === 10 seconds per match allowed
             matchesLeft = 15;
         } else {
             //timer = 120; // 4x3: timer/matchesLeft === 20 seconds per match allowed
-            timer = 120
+            timer = 2
             matchesLeft = 6;
         }
     }
@@ -117,7 +120,7 @@ $(document).ready(function() {
         matchesLeft = 0;
         isCardOne = true;
         topic = "";
-        difficulty = "";
+        difficulty = "easy";
         $(".card").removeClass("locked");
         $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
@@ -212,20 +215,31 @@ $(document).ready(function() {
     //save data to local storage
 
     function saveTodos(todo) {
-        if (localStorage["todos"]) {
-            var existingLocalStorage = localStorage.getItem("todos")
+        console.log("difficulty " + difficulty);
+        if (localStorage[difficulty]) {
+            var existingLocalStorage = localStorage.getItem(difficulty)
             var structuredData = JSON.parse(existingLocalStorage)
             structuredData.push(todo)
             var str = JSON.stringify(structuredData);
-            localStorage.setItem("todos", str)
+            localStorage.setItem(difficulty, str)
         } else {
+            console.log("hello");
             var str = JSON.stringify([todo]);
-            localStorage.setItem("todos", str);
+            localStorage.setItem(difficulty, str);
         }
     }
 
-    function getTodos() {
-        var str = localStorage.getItem("todos");
+
+
+    function getTodos(currentDifficulty) {
+        var str = "";
+        // for hall of fame button on landing, if user does npt
+        // choose an option the easy leaderboard will be displayed
+        if (currentDifficulty === null) {
+            str = localStorage.getItem("easy");
+        } else {
+            str = localStorage.getItem(currentDifficulty);
+        }
         todos = JSON.parse(str);
         if (!todos) {
             todos = []
@@ -267,25 +281,33 @@ $(document).ready(function() {
         }
     }
 
+
+
+    function displayHOF() {
+        getTodos($("#lbOptions").val());
+        listTodos();
+    }
+
     $("#submit").click(function() {
         var currentUser = $("#name").val();
-        currentScore = score;
+        var currentScore = score;
         addNewTodoWithName(currentUser, currentScore);
-        getTodos();
+        getTodos(difficulty);
         listTodos();
 
         $("#end").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").addClass("hide");
-        loadLeaderboard();
     });
     $("#hof").click(function() {
         $("#landing").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
-        loadLeaderboard();
-        getTodos();
-        listTodos();
+        displayHOF();
+    });
+
+    $("#lbOptions").change(function() {
+        displayHOF();
     });
 
 
