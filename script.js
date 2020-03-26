@@ -2,9 +2,9 @@ $(document).ready(function () {
     // needed to initialize form select 
     $('select').formSelect();
 
-    //====================== global variables ==========================================
+    //====================== GLOBAL VARIABLES ==========================================
     var topic = "";
-    var difficulty = "";
+    var difficulty = "easy";
     var timer = 0;
     var score = 0;
     var matchesLeft = 0;
@@ -15,7 +15,111 @@ $(document).ready(function () {
     var numRows = 0;
     var boardType = "";
 
-    //===================================================================================
+    //============================ LEADERBOARD SET UP ===============================
+    //save data to local storage
+    function saveScore(entry) {
+        if (localStorage[difficulty]) {
+            var existingLocalStorage = localStorage.getItem(difficulty);
+            var structuredData = JSON.parse(existingLocalStorage);
+            structuredData.push(entry)
+            var str = JSON.stringify(structuredData);
+            localStorage.setItem(difficulty, str)
+        } else {
+            var str = JSON.stringify([entry]);
+            localStorage.setItem(difficulty, str);
+        }
+    }
+
+    // add user score to leaderboard
+    function addScore(name, userScore) {
+        var entry = new Entry(name, userScore);
+        saveScore(entry);
+
+        function Entry(name, userScore) {
+            this.name = name;
+            this.score = userScore;
+        }
+    }
+
+    function getLeaderboard(currentDifficulty) {
+        var str = localStorage.getItem(currentDifficulty);
+        entries = JSON.parse(str);
+        if (!entries) {
+            entries = [];
+        }
+
+        function dynamicSort(property) {
+            var sortOrder = -1;
+            if (property[0] === "-") {
+                sortOrder = 1;
+                property = property.substr(1);
+            }
+            return function (a, b) {
+
+                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+                return result * sortOrder;
+            }
+        }
+        entries.sort(dynamicSort("score"));
+        // entries.length = 10
+    }
+
+    // TODO: populate rows in leaderboard if difficulty global var
+    // empty, display leaderboard for easy level (default option on view from landing)
+    // otherwise display based on difficulty level saved (after user submits name)
+    function displayLeaderboard() {
+        var leaderBoard = $("#leaderboardRows");
+        leaderBoard.empty();
+        let j = 1;
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var userName = entry.name;
+            var userScore = entry.score;
+
+            if (i !== 0 && userScore !== entries[i - 1].score) {
+                j++;
+            }
+
+            var newTag = $("<tr>");
+            var newTagUserrank = $("<td>").text(j);
+            var newTagUsername = $("<td>").text(userName);
+            var newTagUserscore = $("<td>").text(userScore);
+            // highlights the current user's score when leaderboard is
+            // displayed after the game is ended
+            if (userName === $("#name").val() && userScore === score) {
+                newTag.css("background", "rgba(46, 139, 86, 0.8)");
+            }
+            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
+            leaderBoard.append(newTag);
+        }
+    }
+
+    // for hall of fame button on landing, if user does npt
+    // choose an option the easy leaderboard will be displayed
+    function displayHOF() {
+        var userChoice = $("#lbOptions").val();
+        if (userChoice === null) {
+            getLeaderboard("easy");
+        }
+        else {
+            getLeaderboard(userChoice);
+        }
+        displayLeaderboard();
+    }
+
+    function submitScore() {
+        var currentUser = $("#name").val();
+        var currentScore = score;
+        addScore(currentUser, currentScore);
+        getLeaderboard(difficulty);
+        displayLeaderboard();
+
+        $("#end").addClass("hide");
+        $("#leaderboard").removeClass("hide");
+        $("#lbOptionsRow").addClass("hide");
+    }
+
+    //========================= GAME SET UP ===================================
     // gets the APIs for the topic user chose
     function setGameTopic(numCards) {
         switch (topic) {
@@ -35,7 +139,10 @@ $(document).ready(function () {
     // start up the game
     function setGame() {
         // user's chosen difficulty
-        difficulty = $("#difficulty").val();
+        userDifficulty = $("#difficulty").val();
+        if (userDifficulty !== null) {
+            difficulty = userDifficulty;
+        }
 
         // user's chosen topic
         topic = $("#topic").val();
@@ -56,7 +163,7 @@ $(document).ready(function () {
                 boardType = "sixByFive";
                 break;
             default:
-                timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
+                timer = 3;    // TODO:4x3: timer/matchesLeft === 20 seconds per match allowed
                 matchesLeft = 6;
                 numCols = 4;
                 numRows = 3;
@@ -64,183 +171,6 @@ $(document).ready(function () {
                 break;
         }
         setGameTopic(numCols * numRows);
-    }
-
-    // hide everything on the page and display
-    // the nav, game container, score, and timer 
-    function loadGamePage() {
-        $("#landing").addClass("hide");
-        $("#hof").addClass("hide");
-        $("nav").removeClass("hide");
-        $("#game").removeClass("hide");
-
-        setGame();
-        $("#timer").text(timer);
-        $("#score").text(score)
-    }
-
-    // reset all values so it's ready
-    // for when the game is played again
-    function reset() {
-        score = 0;
-        timer = 0;
-        matchesLeft = 0;
-        isCardOne = true;
-        topic = "";
-        difficulty = "";
-        photoArray = [];
-        $(".card").removeClass("locked");
-        $(".card").removeClass("in-play");
-        $("#overlay").removeClass("hide");
-        $("#back").removeClass("hide");
-        $("#cardsContainer").empty();
-        $("#topic").prop("selectedIndex", 0);
-        $("#difficulty").prop('selectedIndex', 0);
-        $("#lbOptions").prop('selectedIndex', 0);
-        $('select').formSelect();
-    }
-
-    // load landing page coming from game or leaderboard
-    function loadLanding() {
-        reset();
-        $("#leaderboard").addClass("hide");
-        $("nav").addClass("hide");
-        $("#hof").removeClass("hide");
-        $("#landing").removeClass("hide");
-    }
-
-    function evaluateMatch(cardTwo) {
-        // this is the second card, lets compare the two
-        var cardTwoID = cardTwo.find("img").attr("src");
-        var cardOneID = cardOne.find("img").attr("src");
-
-        if (cardOneID === cardTwoID) {
-            // a match, add some points!
-            score += 5;
-            matchesLeft--;
-
-            // and keep the cards from flipping again
-            cardOne.addClass("locked");
-            cardTwo.addClass("locked");
-        } else {
-            // uh-oh, lose some points
-            score -= 1;
-
-            // flip the cards back for another try
-            cardTwo.flip(false);
-            cardOne.flip(false);
-        }
-
-        // whether it was a match or not, cardOne is no longer in-play
-        cardOne.removeClass("in-play");
-
-        // update on-screen score
-        $("#score").text(score);
-    }
-
-    function checkCardSelection() {
-        // ignore clicks on cards already matched up or in play
-        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
-            console.log("card is locked or in-play: " + $(this).find("p").text());
-            return;
-        }
-
-        // show the image 
-        $(this).flip(true);
-        if (isCardOne) {
-            cardOne = $(this);
-            cardOne.addClass("in-play");
-        } else {
-            setTimeout(evaluateMatch, 1000, $(this));
-        }
-        isCardOne = !isCardOne;
-    }
-
-    //save data to local storage
-    function saveScore(entry) {
-        if (localStorage["frustration-lb"]) {
-            var existingLocalStorage = localStorage.getItem("frustration-lb")
-            var structuredData = JSON.parse(existingLocalStorage)
-            structuredData.push(entry)
-            var str = JSON.stringify(structuredData);
-            localStorage.setItem("frustration-lb", str)
-        } else {
-            var str = JSON.stringify([entry]);
-            localStorage.setItem("frustration-lb", str);
-        }
-    }
-    
-    // add user score to leaderboard
-    function addScore(name, score) {
-        var entry = new Entry(name, score);
-        saveScore(entry);
-
-        function Entry(name, score) {
-            this.name = name;
-            this.score = score;
-        }
-    }
-
-    function getLeaderboard() {
-        var str = localStorage.getItem("frustration-lb");
-        entries = JSON.parse(str);
-        if (!entries) {
-            entries = []
-        }
-
-        function dynamicSort(property) {
-            var sortOrder = -1;
-            if (property[0] === "-") {
-                sortOrder = 1;
-                property = property.substr(1);
-            }
-            return function(a, b) {
-
-                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-                return result * sortOrder;
-            }
-        }
-        entries.sort(dynamicSort("score"))
-        entries.length = 10
-    }
-
-    // TODO: populate rows in leaderboard if difficulty global var
-    // empty, display leaderboard for easy level (default option on view from landing)
-    // otherwise display based on difficulty level saved (after user submits name)
-    // MVP: just get leaderboard working
-    function displayLeaderboard() {
-        var leaderBoard = $("#leaderboardRows");
-        leaderBoard.empty();
-        let j = 0;
-
-        for (var i in entries) {
-            j++;
-            var entry = entries[i];
-            var name = entry.name;
-            var score = entry.score;
-
-            var newTag = $("<tr>");
-            var newTagUserrank = $("<td>").text(j);
-            var newTagUsername = $("<td>").text(name);
-            var newTagUserscore = $("<td>").text(score);
-            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
-            leaderBoard.append(newTag);
-        }
-    }
-
-    // loads end page and displays their final score
-    function loadEndPage() {
-        $("#game").addClass("hide");
-        $("#back").addClass("hide");
-        $("#end").removeClass("hide");
-
-        if (timer === 0) {
-            $("#endMessage").text("Time is up!");
-        }
-        else {
-            $("#endMessage").text("You won!");
-        }
-        $("#finalScore").text(score);
     }
 
     // start game timer
@@ -323,6 +253,112 @@ $(document).ready(function () {
         }
     }
 
+    function evaluateMatch(cardTwo) {
+        // this is the second card, lets compare the two
+        var cardTwoID = cardTwo.find("img").attr("src");
+        var cardOneID = cardOne.find("img").attr("src");
+
+        if (cardOneID === cardTwoID) {
+            // a match, add some points!
+            score += 5;
+            matchesLeft--;
+
+            // and keep the cards from flipping again
+            cardOne.addClass("locked");
+            cardTwo.addClass("locked");
+        } else {
+            // uh-oh, lose some points
+            score -= 1;
+
+            // flip the cards back for another try
+            cardTwo.flip(false);
+            cardOne.flip(false);
+        }
+
+        // whether it was a match or not, cardOne is no longer in-play
+        cardOne.removeClass("in-play");
+
+        // update on-screen score
+        $("#score").text(score);
+    }
+
+    function checkCardSelection() {
+        // ignore clicks on cards already matched up or in play
+        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
+            console.log("card is locked or in-play: " + $(this).find("p").text());
+            return;
+        }
+
+        // show the image 
+        $(this).flip(true);
+        if (isCardOne) {
+            cardOne = $(this);
+            cardOne.addClass("in-play");
+        } else {
+            setTimeout(evaluateMatch, 1000, $(this));
+        }
+        isCardOne = !isCardOne;
+    }
+
+    //================== PAGE DISPLAYS ============================
+    // hide everything on the page and display
+    // the nav, game container, score, and timer 
+    function loadGamePage() {
+        $("#landing").addClass("hide");
+        $("#hof").addClass("hide");
+        $("nav").removeClass("hide");
+        $("#game").removeClass("hide");
+
+        setGame();
+        $("#timer").text(timer);
+        $("#score").text(score)
+    }
+
+    // reset all values so it's ready
+    // for when the game is played again
+    function reset() {
+        score = 0;
+        timer = 0;
+        matchesLeft = 0;
+        isCardOne = true;
+        topic = "";
+        difficulty = "easy";
+        photoArray = [];
+        $(".card").removeClass("locked");
+        $(".card").removeClass("in-play");
+        $("#overlay").removeClass("hide");
+        $("#back").removeClass("hide");
+        $("#cardsContainer").empty();
+        $("#topic").prop("selectedIndex", 0);
+        $("#difficulty").prop('selectedIndex', 0);
+        $("#lbOptions").prop('selectedIndex', 0);
+        $('select').formSelect();
+    }
+
+    // load landing page coming from game or leaderboard
+    function loadLanding() {
+        reset();
+        $("#leaderboard").addClass("hide");
+        $("nav").addClass("hide");
+        $("#hof").removeClass("hide");
+        $("#landing").removeClass("hide");
+    }
+
+    // loads end page and displays their final score
+    function loadEndPage() {
+        $("#game").addClass("hide");
+        $("#back").addClass("hide");
+        $("#end").removeClass("hide");
+
+        if (timer === 0) {
+            $("#endMessage").text("Time is up!");
+        }
+        else {
+            $("#endMessage").text("You won!");
+        }
+        $("#finalScore").text(score);
+    }
+
     //====================================== API CALLS =========================================
     function getCat(numCards) {
         catUrl = "https://api.thecatapi.com/v1/images/search?limit=15&apikey=5767aba7-30b0-4677-a169-9bd06be152b8";
@@ -384,11 +420,12 @@ $(document).ready(function () {
             makeGameBoard();
         });
     }
-
+    
     //======================= EVENT LISTENERS =========================
     $(document).on("click", ".card", checkCardSelection);
     $("#start").click(loadGamePage);
     $("#home").click(loadLanding);
+    $("#submit").click(submitScore);
     $("#back").click(function () {
         $("#game").addClass("hide");
         loadLanding();
@@ -399,22 +436,19 @@ $(document).ready(function () {
         loadLanding();
     });
 
-    $("#submit").click(function() {
-        var currentUser = $("#name").val();
-        currentScore = score;
-        addScore(currentUser, currentScore);
-        getLeaderboard();
-        displayLeaderboard();
-
-        $("#end").addClass("hide");
-        $("#leaderboard").removeClass("hide");
-        $("#lbOptionsRow").addClass("hide");
+    // if someone wants to sumbit their name by pressing enter
+    $("#name").keyup(function(event) {
+        if (event.keyCode === 13) {
+            submitScore();
+        }
     });
-    $("#hof").click(function() {
+
+    $("#hof").click(function () {
         $("#landing").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
-        getLeaderboard();
-        displayLeaderboard();
+        displayHOF();
     });
+
+    $("#lbOptions").change(displayHOF);
 });
