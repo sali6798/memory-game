@@ -42,6 +42,14 @@ nav {
     padding: 0 10px;
 }
 
+table {
+    background-color: rgba(46, 139, 86, 0.4);
+}
+
+td,th {
+    padding: 3px;
+}
+
 .container, .gameContainer {
     margin-bottom: 20px;
 }
