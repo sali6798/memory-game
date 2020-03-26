@@ -40,13 +40,10 @@ $(document).ready(function () {
         var col = $(`<div class='col ${boardType}'>`);
         var card = $("<div class='card'>");
         var cardFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
         var cardBack = $("<div class='back card-image'>");
         console.log(photoArray[pos]);
         var newImg = $(`<img src="${photoArray[pos]}" alt="card pic">`);
         cardBack.append(newImg);
-        cardFront.append(newFrontP);
         card.append(cardFront, cardBack);
         col.append(card);
         newRow.append(col);
