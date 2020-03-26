@@ -185,8 +185,11 @@ td,th {
     margin-top: 20px;
 }
 
+#leaderboard h1 {
+    margin-bottom: 15px;
+}
+
 #lbOptionsRow {
-    margin-top: 25px;
     margin-bottom: 15px;
 }
 

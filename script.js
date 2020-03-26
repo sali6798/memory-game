@@ -79,34 +79,6 @@ $(document).ready(function () {
         $("#score").text(score)
     }
 
-    // TODO: populate rows in leaderboard if difficulty global var
-    // empty, display leaderboard for easy level (default option on view from landing)
-    // otherwise display based on difficulty level saved (after user submits name)
-    // MVP: just get leaderboard working
-    function loadLeaderboard() {
-        var leaderBoard = $("#leaderboardRows");
-        leaderBoard.empty();
-        let j = 0;
-
-        for (var i in rankings) {
-            j++;
-            var entry = rankings[i];
-            var name = entry.name;
-            var score = entry.score;
-
-            var newTag = $("<tr>");
-            var newTagUserrank = $("<td>").text(j);
-            var newTagUsername = $("<td>").text(name);
-            var newTagUserscore = $("<td>").text(score);
-            // if (currentUser === name) {
-            //     newTag.css("background-color", "rgba(46, 139, 86, 0.8)")
-            // }
-            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
-            leaderBoard.append(newTag);
-
-        }
-    }
-
     // reset all values so it's ready
     // for when the game is played again
     function reset() {
@@ -182,6 +154,78 @@ $(document).ready(function () {
             setTimeout(evaluateMatch, 1000, $(this));
         }
         isCardOne = !isCardOne;
+    }
+
+    //save data to local storage
+    function saveScore(entry) {
+        if (localStorage["frustration-lb"]) {
+            var existingLocalStorage = localStorage.getItem("frustration-lb")
+            var structuredData = JSON.parse(existingLocalStorage)
+            structuredData.push(entry)
+            var str = JSON.stringify(structuredData);
+            localStorage.setItem("frustration-lb", str)
+        } else {
+            var str = JSON.stringify([entry]);
+            localStorage.setItem("frustration-lb", str);
+        }
+    }
+    
+    // add user score to leaderboard
+    function addScore(name, score) {
+        var entry = new Entry(name, score);
+        saveScore(entry);
+
+        function Entry(name, score) {
+            this.name = name;
+            this.score = score;
+        }
+    }
+
+    function getLeaderboard() {
+        var str = localStorage.getItem("frustration-lb");
+        entries = JSON.parse(str);
+        if (!entries) {
+            entries = []
+        }
+
+        function dynamicSort(property) {
+            var sortOrder = -1;
+            if (property[0] === "-") {
+                sortOrder = 1;
+                property = property.substr(1);
+            }
+            return function(a, b) {
+
+                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+                return result * sortOrder;
+            }
+        }
+        entries.sort(dynamicSort("score"))
+        entries.length = 10
+    }
+
+    // TODO: populate rows in leaderboard if difficulty global var
+    // empty, display leaderboard for easy level (default option on view from landing)
+    // otherwise display based on difficulty level saved (after user submits name)
+    // MVP: just get leaderboard working
+    function displayLeaderboard() {
+        var leaderBoard = $("#leaderboardRows");
+        leaderBoard.empty();
+        let j = 0;
+
+        for (var i in entries) {
+            j++;
+            var entry = entries[i];
+            var name = entry.name;
+            var score = entry.score;
+
+            var newTag = $("<tr>");
+            var newTagUserrank = $("<td>").text(j);
+            var newTagUsername = $("<td>").text(name);
+            var newTagUserscore = $("<td>").text(score);
+            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
+            leaderBoard.append(newTag);
+        }
     }
 
     // loads end page and displays their final score
@@ -341,57 +385,6 @@ $(document).ready(function () {
         });
     }
 
-    //save data to local storage
-    function saveScore(entry) {
-        if (localStorage["frustration-lb"]) {
-            var existingLocalStorage = localStorage.getItem("frustration-lb")
-            console.log(existingLocalStorage)
-            var structuredData = JSON.parse(existingLocalStorage)
-            structuredData.push(entry)
-            var str = JSON.stringify(structuredData);
-            localStorage.setItem("frustration-lb", str)
-        } else {
-            var str = JSON.stringify([entry]);
-            localStorage.setItem("frustration-lb", str);
-        }
-    }
-
-    function addScore(score) {
-        // gets user input for name
-        var currentUser = $("#name").val();
-        var entry = new Entry(currentUser, score);
-        saveScore(entry);
-
-        //Generate data structure to be saved to local Storage
-        function Entry(currentUser, score) {
-            this.name = currentUser;
-            this.score = score;
-        }
-    }
-
-    function getLeaderboad() {
-        var str = localStorage.getItem("frustration-lb");
-        rankings = JSON.parse(str);
-        if (!rankings) {
-            rankings = []
-        }
-
-        function dynamicSort(property) {
-            var sortOrder = -1;
-            if (property[0] === "-") {
-                sortOrder = 1;
-                property = property.substr(1);
-            }
-            return function (a, b) {
-
-                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-                return result * sortOrder;
-            }
-        }
-        rankings.sort(dynamicSort("score"))
-        rankings.length = 10
-    }
-
     //======================= EVENT LISTENERS =========================
     $(document).on("click", ".card", checkCardSelection);
     $("#start").click(loadGamePage);
@@ -404,117 +397,24 @@ $(document).ready(function () {
     $(".brand-logo").click(function () {
         $("#game").addClass("hide");
         loadLanding();
-    })
+    });
 
-    $("#submit").click(function () {
-        // gets user input for name
-        addScore(score);
-        getLeaderboad();
-
-        // var user = $("#name").val();
-        // var currentUser = $("#name").val();
-        // currentScore = score;
-        // addNewTodoWithName(currentUser, currentScore);
-
-        // //Generate data structure to be saved to local Storage
-        // function addNewTodoWithName(name, score) {
-        //     var todo = new Todo(name, score);
-        //     saveTodos(todo);
-
-        //     function Todo(name, score) {
-        //         this.name = name;
-        //         this.complete = score;
-        //     }
-        // }
-
-        // //save data to local storage
-
-        // function saveTodos(todo) {
-        //     if (localStorage["todos"]) {
-        //         var existingLocalStorage = localStorage.getItem("todos")
-        //         console.log(existingLocalStorage)
-        //         var structuredData = JSON.parse(existingLocalStorage)
-        //         structuredData.push(todo)
-        //         var str = JSON.stringify(structuredData);
-        //         localStorage.setItem("todos", str)
-        //     } else {
-        //         var str = JSON.stringify([todo]);
-        //         localStorage.setItem("todos", str);
-        //     }
-        // }
-        // //add new Todo
-
-        // getTodos();
-        
-
-        // function getTodos() {
-        //     var str = localStorage.getItem("todos");
-        //     todos = JSON.parse(str);
-        //     if (!todos) {
-        //         todos = []
-        //     }
-
-        //     function dynamicSort(property) {
-        //         var sortOrder = -1;
-        //         if (property[0] === "-") {
-        //             sortOrder = 1;
-        //             property = property.substr(1);
-        //         }
-        //         return function (a, b) {
-
-        //             var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-        //             return result * sortOrder;
-        //         }
-        //     }
-        //     todos.sort(dynamicSort("complete"))
-        //     todos.length = 10
-        // }
-
-
-        // listTodos();
-        loadLeaderboard();
-
-        // function listTodos() {
-        //     var leaderBoard = $("#leaderboardRows");
-        //     leaderBoard.empty();
-        //     let j = 0;
-
-        //     // sort todos here
-
-
-        //     for (var i in todos) {
-        //         j++;
-        //         var todo = todos[i];
-        //         var name = todo.name;
-        //         var completed = todo.complete;
-
-        //         var newTag = $("<tr>");
-        //         var newTagUserrank = $("<td>").text(j);
-        //         var newTagUsername = $("<td>").text(name);
-        //         var newTagUserscore = $("<td>").text(completed);
-        //         // if (currentUser === name) {
-        //         //     newTag.css("background-color", "rgba(46, 139, 86, 0.8)")
-        //         // }
-        //         newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
-        //         leaderBoard.append(newTag);
-
-        //     }
-
-
-        // }
-
-
+    $("#submit").click(function() {
+        var currentUser = $("#name").val();
+        currentScore = score;
+        addScore(currentUser, currentScore);
+        getLeaderboard();
+        displayLeaderboard();
 
         $("#end").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").addClass("hide");
-        // loadLeaderboard();
     });
-
-    $("#hof").click(function () {
+    $("#hof").click(function() {
         $("#landing").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
-        loadLeaderboard();
+        getLeaderboard();
+        displayLeaderboard();
     });
 });
