@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // needed to initialize form select 
     $('select').formSelect();
 
@@ -10,9 +10,156 @@ $(document).ready(function() {
     var matchesLeft = 0;
     var isCardOne = true;
     var cardOne;
+    var photoArray = [];
+    var numCols = 0;
+    var numRows = 0;
+    var boardType = "";
 
     //================== BELOW THIS IS BUTTON/GET INPUT VALUE EVENT LISTENERS ==================
 
+    // start game timer
+    function startGame() {
+        // starts timer and displays time
+        var timerInterval = setInterval(function () {
+            timer--;
+            $("#timer").text(timer);
+
+            if ($("#game").hasClass("hide")) {
+                clearInterval(timerInterval);
+            }
+
+            else if (timer === 0 || matchesLeft === 0) {
+                clearInterval(timerInterval);
+                loadEndPage();
+            }
+
+        }, 1000);
+    }
+    
+    function makeCard(boardType, newRow, pos) {
+        var col = $(`<div class='col ${boardType}'>`);
+        var card = $("<div class='card'>");
+        var cardFront = $("<div class='front'>");
+        var newFrontP = $("<p>");
+        newFrontP.text("I'm a Placeholder")
+        var cardBack = $("<div class='back card-image'>");
+        console.log(photoArray[pos]);
+        var newImg = $(`<img src="${photoArray[pos]}" alt="card pic">`);
+        cardBack.append(newImg);
+        cardFront.append(newFrontP);
+        card.append(cardFront, cardBack);
+        col.append(card);
+        newRow.append(col);
+        $(card).flip({
+            trigger: 'manual'
+        });
+    }
+    
+    function makeGameBoard() {
+        var pos = 0;
+        for (var i = 0; i < numRows; i++) {
+            var newRow = $("<div class='row cardRow'>");
+            for (var j = 0; j < numCols; j++) {
+                makeCard(boardType, newRow, pos);
+                pos++;
+            }
+            $("#cardsContainer").append(newRow);
+        }
+        
+        var secondsLeft = 3;
+        var timerInterval = setInterval(function () {
+            $("#countdown").text(secondsLeft);
+            if (secondsLeft === 0) {
+                clearInterval(timerInterval);
+                $("#overlay").addClass("hide");
+                startGame();
+            }
+            secondsLeft--;
+        }, 1000);
+
+    }
+
+    function setGameTopic(numCards) {
+        switch (topic) {
+            case "dogs":
+                getPexelsDog(numCards);
+                break;
+            case "cats":
+                getCat(numCards);
+                break;
+            default:
+                getLandscape(numCards);
+                break;
+        }      
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * i)
+            const temp = array[i]
+            array[i] = array[j]
+            array[j] = temp
+        }
+    }
+
+    function getCat(numCards) {
+        catUrl = "https://api.thecatapi.com/v1/images/search?limit=15&apikey=5767aba7-30b0-4677-a169-9bd06be152b8";
+
+        $.ajax({
+            url: catUrl,
+            method: "GET"
+        }).then(function (response) {
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response[i].url);
+                photoArray.push(response[i].url);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+    }
+
+    function getPexelsDog(numCards) {
+        var rand = Math.floor(Math.random() * 200 + 1);
+        pexelsUrl = "https://api.pexels.com/v1/search?query=dogs+query&per_page=15&page=" + rand;
+
+        $.ajax({
+            url: pexelsUrl,
+            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
+            method: "GET",
+            type: "text/json"
+        }).then(function (response) {
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response.photos[i].src.original);
+                photoArray.push(response.photos[i].src.original);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+
+    }
+   
+    function getLandscape(numCards) {
+        var rand = Math.floor(Math.random() * 200 + 1);
+        pexelsUrl = "https://api.pexels.com/v1/search?query=landscape+query&per_page=15&page=" + rand;
+
+        $.ajax({
+            url: pexelsUrl,
+            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
+            method: "GET",
+            type: "text/json"
+        }).then(function (response) {
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response.photos[i].src.original);
+                photoArray.push(response.photos[i].src.original);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+    }
+    
     // loads end page, ask for user's name
     function loadEndPage() {
         $("#game").addClass("hide");
@@ -29,44 +176,33 @@ $(document).ready(function() {
 
     }
 
-    // start game timer
-    function startGame() {
-        // starts timer and displays time
-        var timerInterval = setInterval(function() {
-            timer--;
-            $("#timer").text(timer);
-
-            if ($("#game").hasClass("hide")) {
-                clearInterval(timerInterval);
-                console.log("done");
-            }
-            
-            if (timer === 0 || matchesLeft === 0) {
-                clearInterval(timerInterval);
-                loadEndPage();
-            }
-
-        }, 1000);
-        
-        // TODO: update score (global var)
-        // TODO: clear interval/stop timer when user finds all matches first
-    }
-
-    function setTimerLength() {
+    function setGame() {
         difficulty = $("#difficulty").val();
-
-        if (difficulty === "moderate") {
-            timer = 150;    // 5x4: timer/matchesLeft === 15 seconds per match allowed
-            matchesLeft = 10;
+        topic = $("#topic").val();
+        switch (difficulty) {
+            case "moderate":
+                timer = 150;    // 5x4: timer/matchesLeft === 15 seconds per match allowed
+                matchesLeft = 10;
+                numCols = 5;
+                numRows = 4;
+                boardType = "fiveByFour";
+                break;
+            case "hard":
+                timer = 150;    // 6x5: timer/matchesLeft === 10 seconds per match allowed
+                matchesLeft = 15;
+                numCols = 6;
+                numRows = 5;
+                boardType = "sixByFive";
+                break;
+            default:
+                timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
+                matchesLeft = 6;
+                numCols = 4;
+                numRows = 3;
+                boardType = "fourByThree";
+                break;
         }
-        else if (difficulty === "hard") {
-            timer = 150;    // 6x5: timer/matchesLeft === 10 seconds per match allowed
-            matchesLeft = 15;
-        }
-        else {
-            timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
-            matchesLeft = 6;
-        }
+        setGameTopic(numCols * numRows);
     }
 
     function loadGamePage() {
@@ -74,33 +210,13 @@ $(document).ready(function() {
         $("#hof").addClass("hide");
         $("nav").removeClass("hide");
         $("#game").removeClass("hide");
-        
-        setTimerLength();
+
+        setGame();
         $("#timer").text(timer);
         $("#score").text(score)
-        // TODO: create cards with API
-        // size based on difficulty (global var)
-
-
-        // if not topic chosen, val will be null - pick random topic
-        topic = $("#topic").val();
-
-        
-
-        // countdown before game begins (overlay)
-        var secondsLeft = 3;
-        var timerInterval = setInterval(function() {
-            $("#countdown").text(secondsLeft);
-            if (secondsLeft === 0) {
-                clearInterval(timerInterval);
-                $("#overlay").addClass("hide");
-                startGame();
-            }
-            secondsLeft--;
-        }, 1000);
-        
+    
     }
-    makeGameBoardHard();
+    
     // TODO: populate rows in leaderboard if difficulty global var
     // empty, display leaderboard for easy level (default option on view from landing)
     // otherwise display based on difficulty level saved (after user submits name)
@@ -109,7 +225,6 @@ $(document).ready(function() {
         // append to #leaderboardRows
     }
 
-
     function reset() {
         score = 0;
         timer = 0;
@@ -117,10 +232,12 @@ $(document).ready(function() {
         isCardOne = true;
         topic = "";
         difficulty = "";
+        photoArray = [];
         $(".card").removeClass("locked");
         $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
         $("#back").removeClass("hide");
+        $("#cardsContainer").empty();
         $("#topic").prop("selectedIndex", 0);
         $("#difficulty").prop('selectedIndex', 0);
         $("#lbOptions").prop('selectedIndex', 0);
@@ -133,10 +250,13 @@ $(document).ready(function() {
         $("nav").addClass("hide");
         $("#hof").removeClass("hide");
         $("#landing").removeClass("hide");
-    }    
+    }
 
     // event listener for User card selection
-    $(".card").click(function () {
+    // $(".card").click(function () {
+    $(document).on("click", ".card", function() {
+
+        
         // ignore clicks on cards already matched up or in play
         if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
             console.log("card is locked or in-play: " + $(this).find("p").text());
@@ -158,24 +278,24 @@ $(document).ready(function() {
         // this is the second card, lets compare the two
         var cardTwoID = cardTwo.find("img").attr("src");
         var cardOneID = cardOne.find("img").attr("src");
-        
+
         if (cardOneID === cardTwoID) {
             // a match, add some points!
             score += 5;
             matchesLeft--;
-            
+
             // and keep the cards from flipping again
             cardOne.addClass("locked");
             cardTwo.addClass("locked");
         } else {
             // uh-oh, lose some points
             score -= 1;
-            
+
             // flip the cards back for another try
             cardTwo.flip(false);
             cardOne.flip(false);
         }
-        
+
         // whether it was a match or not, cardOne is no longer in-play
         cardOne.removeClass("in-play");
 
@@ -186,488 +306,67 @@ $(document).ready(function() {
     // event listeners
     $("#start").click(loadGamePage);
     $("#home").click(loadLanding);
-    $("#back").click(function() {
+    $("#back").click(function () {
         $("#game").addClass("hide");
         loadLanding();
     });
-    $(".brand-logo").click(function() {
+    $(".brand-logo").click(function () {
         $("#game").addClass("hide");
         loadLanding();
     })
     // TODO: add user score to leaderboard
-    $("#submit").click(function() {
+    $("#submit").click(function () {
         // gets user input for name
         var user = $("#name").val();
 
-        
+
         $("#end").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").addClass("hide");
         loadLeaderboard();
     });
-    $("#hof").click(function() {
+    $("#hof").click(function () {
         $("#landing").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
         loadLeaderboard();
     });
 
-    
 
-   
+
+
     //================================== BELOW THIS IS API CALLS =========================================
-       
-$(".card").flip({
-    trigger: 'manual'
+
+
+    // function getMovie() {
+    //     var theMovie = "star wars";
+
+    //     var queryUrl = "https://www.omdbapi.com/?t=" + theMovie + "&type=movie&apikey=trilogy";
+
+    //     $.ajax({
+    //         url: queryUrl,
+    //         method: "GET"
+    //     }).then(function (response) {
+    //         console.log(response);
+    //         console.log(response.Poster)
+    //     })
+
+    // }
+
+
+    // function getNASA() {
+    //     var randomYear = Math.floor(Math.random() * (2020 - 2015) + 2010);
+    //     var randomMonth = Math.floor(Math.random() * (12 - 1) + 1);
+    //     var randomDate = Math.floor(Math.random() * (28 - 1) + 1);
+    //     var NASAUrl = `https://api.nasa.gov/planetary/apod?date=${randomYear}-${randomMonth}-${randomDate}&api_key=2YVxSEGEXJwH01Wb6QwvfeJyAWtXzKRNBVhIbVJb`
+
+
+    //     $.ajax({
+    //         url: NASAUrl,
+    //         method: "GET"
+    //     }).then(function (response) {
+    //         console.log(response.url);
+    //     })
+    // }
+
 });
-// getPexelsDog();
-// getCat();
-getLandscape();
-var photoArray = [];
-
-var imgTag = $("img");
-
-
-
-function makeGameBoard() {
-    var newRow = $("<div class='row cardRow'>");
-    var newRow2 = $("<div class='row cardRow'>");
-    var newRow3 = $("<div class='row cardRow'>");
-    for (let i = 0; i < 4; i++) {
-        var newCol = $("<div class='col fourByThree'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow.append(newCol);
-    }
-    $("#cardsContainer").append(newRow)
-    for (let i = 0; i < 4; i++) {
-        var newCol = $("<div class='col fourByThree'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow2.append(newCol);
-    }
-    $("#cardsContainer").append(newRow2)
-
-    for (let i = 0; i < 4; i++) {
-        var newCol = $("<div class='col fourByThree'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow3.append(newCol);
-    }
-    $("#cardsContainer").append(newRow3);
-
-}
-
-function makeGameBoardModerate() {
-    var newRow = $("<div class='row cardRow'>");
-    var newRow2 = $("<div class='row cardRow'>");
-    var newRow3 = $("<div class='row cardRow'>");
-    var newRow4 = $("<div class='row cardRow'>");
-    for (let i = 0; i < 5; i++) {
-        var newCol = $("<div class='col fiveByFour'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow.append(newCol);
-    }
-    $("#cardsContainer").append(newRow)
-    for (let i = 0; i < 5; i++) {
-        var newCol = $("<div class='col fiveByFour'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow2.append(newCol);
-    }
-    $("#cardsContainer").append(newRow2)
-
-    for (let i = 0; i < 5; i++) {
-        var newCol = $("<div class='col fiveByFour'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow3.append(newCol);
-    }
-    $("#cardsContainer").append(newRow3);
-    for (let i = 0; i < 5; i++) {
-        var newCol = $("<div class='col fiveByFour'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow4.append(newCol);
-    }
-    $("#cardsContainer").append(newRow4);
-
-}
-
-
-
-
-function makeGameBoardHard() {
-    var newRow = $("<div class='row cardRow'>");
-    var newRow2 = $("<div class='row cardRow'>");
-    var newRow3 = $("<div class='row cardRow'>");
-    var newRow4 = $("<div class='row cardRow'>");
-    var newRow5 = $("<div class='row cardRow'>");
-    
-    for (let i = 0; i < 6; i++) {
-        var newCol = $("<div class='col sixByFive'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow.append(newCol);
-    }
-    
-    $("#cardsContainer").append(newRow)
-    for (let i = 0; i < 6; i++) {
-        var newCol = $("<div class='col sixByFive'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow2.append(newCol);
-    }
-    
-    $("#cardsContainer").append(newRow2)
-
-    for (let i = 0; i < 6; i++) {
-        var newCol = $("<div class='col sixByFive'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow3.append(newCol);
-    }
-    
-    $("#cardsContainer").append(newRow3);
-    for (let i = 0; i < 6; i++) {
-        var newCol = $("<div class='col sixByFive'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow4.append(newCol);
-    }
-    
-    $("#cardsContainer").append(newRow4);
-    for (let i = 0; i < 6; i++) {
-        var newCol = $("<div class='col sixByFive'>");
-        var newCard = $("<div class='card'>");
-        var newFront = $("<div class='front card-content'>");
-        var newFrontP = $("<p>");
-        newFrontP.text("I'm a Placeholder")
-        var newBack = $("<div class='back card-image'>");
-        var newImg = $("<img>");
-        newBack.append(newImg);
-        newFront.append(newFrontP);
-        newCard.append(newFront, newBack);
-        newCol.append(newCard);
-        newRow5.append(newCol);
-    }
-    
-    $("#cardsContainer").append(newRow5);
-    
-
-}
-
-
-
-
-
-
-
-
-
-function setPhotos(array, element) {
-    $(element).each(function(index){
-        $(this).attr({"src": array[index], "data-": index})
-    })
-}
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * i)
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
-      }
-}
-
-
-
-function getCat() {
-    catUrl = "https://api.thecatapi.com/v1/images/search?limit=15&apikey=5767aba7-30b0-4677-a169-9bd06be152b8";
-
-
-
-    $.ajax({
-        url: catUrl,
-        method: "GET"
-    }).then(function (response) {
-        $(imgTag).each(function (index) {
-
-            if (index < 2) {
-                photoArray.push(response[0].url);
-            } else if (index >= 2 && index < 4){
-                photoArray.push(response[1].url)
-            } else if (index >= 4 && index < 6) {
-                photoArray.push(response[2].url)
-            } else if (index >= 6 && index < 8) {
-                photoArray.push(response[3].url)
-            } else if (index >= 8 && index < 10) {
-                photoArray.push(response[4].url)
-            } else if (index >= 10 && index < 12) {
-                photoArray.push(response[5].url)
-            } else if (index >= 12 && index < 14) {
-                photoArray.push(response[6].url)
-            } else if (index >= 14 && index < 16) {
-                photoArray.push(response[7].url)
-            } else if (index >= 16 && index < 18) {
-                photoArray.push(response[8].url)
-            } else if (index >= 18 && index < 20) {
-                photoArray.push(response[9].url)
-            } else if (index >= 20 && index < 22) {
-                photoArray.push(response[10].url)
-            } else if (index >= 22 && index < 24) {
-                photoArray.push(response[11].url)
-            } else if (index >= 24 && index < 26) {
-                photoArray.push(response[12].url)
-            } else if (index >= 26 && index < 28) {
-                photoArray.push(response[13].url)
-            } else if (index >= 28 && index < 30) {
-                photoArray.push(response[14].url)
-            }
-            
-        })
-
-        shuffleArray(photoArray);
-        setPhotos(photoArray, imgTag);
-        })
-
-        
-    }
-
-
-
-
-
-
-
-
-function getPexelsDog() {
-    var rand = Math.floor(Math.random() * 200 + 1);
-    pexelsUrl = "https://api.pexels.com/v1/search?query=dogs&page=" + rand;
-
-    $.ajax({
-        url: pexelsUrl,
-        headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
-        method: "GET",
-        type: "text/json"
-    }).then(function (response) {
-        $(imgTag).each(function (index) {
-
-            if (index < 2) {
-                photoArray.push(response.photos[0].src.original)
-            } else if (index >= 2 && index < 4) {
-                photoArray.push(response.photos[1].src.original)
-            } else if (index >= 4 && index < 6) {
-                photoArray.push(response.photos[2].src.original)
-            } else if (index >= 6 && index < 8) {
-                photoArray.push(response.photos[3].src.original)
-            } else if (index >= 8 && index < 10) {
-                photoArray.push(response.photos[4].src.original)
-            } else if (index >= 10 && index < 12) {
-                photoArray.push(response.photos[5].src.original)
-            } else if (index >= 12 && index < 14) {
-                photoArray.push(response.photos[6].src.original)
-            } else if (index >= 14 && index < 16) {
-                photoArray.push(response.photos[7].src.original)
-            } else if (index >= 16 && index < 18) {
-                photoArray.push(response.photos[8].src.original)
-            } else if (index >= 18 && index < 20) {
-                photoArray.push(response.photos[9].src.original)
-            } else if (index >= 20 && index < 22) {
-                photoArray.push(response.photos[10].src.original)
-            } else if (index >= 22 && index < 24) {
-                photoArray.push(response.photos[11].src.original)
-            } else if (index >= 24 && index < 26) {
-                photoArray.push(response.photos[12].src.original)
-            } else if (index >= 26 && index < 28) {
-                photoArray.push(response.photos[13].src.original)
-            } else if (index >= 28 && index < 30) {
-                photoArray.push(response.photos[14].src.original)
-            } 
-
-
-
-        })
-
-        shuffleArray(photoArray);
-        setPhotos(photoArray, imgTag);
-
-    });
-
-}
-
-function getLandscape() {
-    var rand = Math.floor(Math.random() * 200 + 1);
-    pexelsUrl = "https://api.pexels.com/v1/search?query=landscape&page=" + rand;
-
-    $.ajax({
-        url: pexelsUrl,
-        headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
-        method: "GET",
-        type: "text/json"
-    }).then(function (response) {
-        $(imgTag).each(function (index) {
-
-            if (index < 2) {
-                photoArray.push(response.photos[0].src.original)
-            } else if (index >= 2 && index < 4) {
-                photoArray.push(response.photos[1].src.original)
-            } else if (index >= 4 && index < 6) {
-                photoArray.push(response.photos[2].src.original)
-            } else if (index >= 6 && index < 8) {
-                photoArray.push(response.photos[3].src.original)
-            } else if (index >= 8 && index < 10) {
-                photoArray.push(response.photos[4].src.original)
-            } else if (index >= 10 && index < 12) {
-                photoArray.push(response.photos[5].src.original)
-            } else if (index >= 12 && index < 14) {
-                photoArray.push(response.photos[6].src.original)
-            } else if (index >= 14 && index < 16) {
-                photoArray.push(response.photos[7].src.original)
-            } else if (index >= 16 && index < 18) {
-                photoArray.push(response.photos[8].src.original)
-            } else if (index >= 18 && index < 20) {
-                photoArray.push(response.photos[9].src.original)
-            } else if (index >= 20 && index < 22) {
-                photoArray.push(response.photos[10].src.original)
-            } else if (index >= 22 && index < 24) {
-                photoArray.push(response.photos[11].src.original)
-            } else if (index >= 24 && index < 26) {
-                photoArray.push(response.photos[12].src.original)
-            } else if (index >= 26 && index < 28) {
-                photoArray.push(response.photos[13].src.original)
-            } else if (index >= 28 && index < 30) {
-                photoArray.push(response.photos[14].src.original)
-            } 
-
-        })
-
-        shuffleArray(photoArray);
-        console.log(photoArray);
-        setPhotos(photoArray, imgTag);
-
-    });
-
-}
-
-// function getMovie() {
-//     var theMovie = "star wars";
-
-//     var queryUrl = "https://www.omdbapi.com/?t=" + theMovie + "&type=movie&apikey=trilogy";
-
-//     $.ajax({
-//         url: queryUrl,
-//         method: "GET"
-//     }).then(function (response) {
-//         console.log(response);
-//         console.log(response.Poster)
-//     })
-
-// }
-
-
-// function getNASA() {
-//     var randomYear = Math.floor(Math.random() * (2020 - 2015) + 2010);
-//     var randomMonth = Math.floor(Math.random() * (12 - 1) + 1);
-//     var randomDate = Math.floor(Math.random() * (28 - 1) + 1);
-//     var NASAUrl = `https://api.nasa.gov/planetary/apod?date=${randomYear}-${randomMonth}-${randomDate}&api_key=2YVxSEGEXJwH01Wb6QwvfeJyAWtXzKRNBVhIbVJb`
-
-
-//     $.ajax({
-//         url: NASAUrl,
-//         method: "GET"
-//     }).then(function (response) {
-//         console.log(response.url);
-//     })
-// }
-
-})
