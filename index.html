@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- FIXME: name TBD -->
     <title>Frustration.</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Roboto+Mono&display=swap" rel="stylesheet">
@@ -20,7 +19,7 @@
         <nav class="hide">
             <div class="nav-wrapper">
                 <a href="#" class="brand-logo logo center">Frustration.</a>
-                <a href="#" id="back" class="left">< Go back</a>
+                <a href="#" id="back" class="left hide-on-small-only" >< Go back</a>
             </div>
         </nav>
     </header>
@@ -28,18 +27,18 @@
     <div class="container">
         <!-- div for landing page -->
         <div id="landing">
-            <!-- FIXME: name TBD -->
-            <h1>Frustration.</h1>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem doloribus, similique nulla iste nostrum
-                temporibus dolore perferendis amet sint ipsa repellat quod illum ipsam a aut laudantium corrupti sunt
-                cum.
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi labore repudiandae expedita sit nobis
-                id
-                fuga, error aliquid nulla fugit cum voluptatibus dolores doloribus tempora deleniti reiciendis repellat
-                in
-                similique?</p>
             <div class="row">
-                <div class="input-field col m2 offset-m3">
+                <div class="col s12">
+                    <h1>Frustration.</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s12">
+                    <p>Frustration. The memory game that will leave you in Frustration. in a race against the clock! Pick your topic and pick the level of difficulty, and try to find all the matching cards as fast as you can. But be careful, for each mismatch you get, you will lose a point! Get playing and beat the Frustration.</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s6 m5 l4 offset-m1 offset-l2">
                     <select id="topic" name="topic">
                         <option value="" selected disabled>topic</option>
                         <option value="landscapes">Landscapes</option>
@@ -48,14 +47,14 @@
                     </select>
                     <label for="topic">Choose a topic:</label>
                 </div>
-                <div class="input-field col m2 offset-m2">
+                <div class="input-field col s6 m5 l4">
                     <select id="difficulty" name="difficulty">
                         <option value="" selected disabled>difficulty</option>
                         <option value="easy">Easy</option>
                         <option value="moderate">Moderate</option>
                         <option value="hard">Hard</option>
                     </select>
-                    <label for="difficulty">Choose a difficulty:</label>
+                    <label for="difficulty">Choose a level:</label>
                 </div>
             </div>
             <button id="start" class="waves-effect waves-light btn" type="button">Start</button>
@@ -66,11 +65,11 @@
             <h1 id="endMessage"></h1>
             <h3>Your score is: <span id="finalScore"></span></h3>
             <div class="row">
-                <div id="nameContainer" class="input-field col m4 offset-s3 offset-m4">
+                <div id="nameContainer" class="input-field col s10 m8 l6 offset-s1 offset-m1 offset-l2">
                     <input placeholder="Name" id="name" type="text">
                     <label for="name">Enter your name for the leaderboard:</label>
                 </div>
-                <div class="col s12 m1 submitCol">
+                <div class="col s12 m1 l2 submitCol">
                     <button id="submit" class="waves-effect waves-light btn" type="submit">Submit</button>
                 </div>
             </div>
@@ -84,7 +83,7 @@
                 </div>
             </div>
             <div class="row" id="lbOptionsRow">
-                <div class="col s2 offset-s10">
+                <div class="col col s6 m4 l3 offset-s6 offset-m8 offset-l9">
                     <select name="lbOptions" id="lbOptions">
                         <option value="" disabled selected>Difficulty</option>
                         <option value="easy">Easy</option>
@@ -117,13 +116,11 @@
         <div class="row">
             <!-- timer displays on the side on >= large screens and on top on less-->
             <div class="col s12 l2 scoreTimer">
-                <h3>Score: <span id="score"></span></h3>
+                <h3 id="scoreHolder">Score: <span id="score"></span></h3>
                 <h3 id="time"><i class="medium material-icons">timer</i>: <span id="timer"></span></h3>
             </div>
             <!-- holds all the cards -->
-            <div id="cardsContainer" class="col s12 l10">
-                
-            </div>
+            <div id="cardsContainer" class="col s12 l10"></div>
         </div>
     </div>
 

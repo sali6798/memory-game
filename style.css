@@ -3,11 +3,11 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    color: white;
     background: linear-gradient(to bottom right, seagreen, rgb(30, 238, 238), rgb(255, 251, 0));
     background-size: 400% 400%;
     animation: change 10s linear infinite;
-    color: white;
-    font-family: 'Montserrat', sans-serif;
 }
 
 @keyframes change {
@@ -23,10 +23,12 @@ h1 {
 
 h3 {
     font-size: 24px;
+    margin: 10px 0;
 }
 
 p {
     font-size: 16px;
+    font-weight: bold;
 }
 
 header {
@@ -38,6 +40,10 @@ nav {
     background-color: rgba(46, 139, 86, 0.2);
     color: white;
     padding: 0 10px;
+}
+
+.container, .gameContainer {
+    margin-bottom: 20px;
 }
 
 .hide {
@@ -60,6 +66,11 @@ nav {
     margin-bottom: 0;
 }
 
+.input-field > label {
+    color: white;
+    font-weight: bold;
+}
+
 .scoreTimer {
     margin-top: 15%;
 }
@@ -77,10 +88,6 @@ nav {
     margin: 0;
     cursor: pointer;
 }
-
-/* .cardRow .col .card:hover{
-    box-shadow: ;
-} */
 
 .fourByThree {
     width: 25%;
@@ -117,6 +124,11 @@ nav {
     color: white;
 }
 
+#landing p {
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
 #back {
     text-align: left;
 }
@@ -134,6 +146,11 @@ nav {
 #overlay h3 {
     color: white;
     margin: 0 auto;
+    padding: 10px;
+}
+
+#scoreHolder {
+    margin-top: 15px;
 }
 
 #time {
@@ -141,29 +158,29 @@ nav {
 }
 
 #time i {
-    font-size: 36px;
+    font-size: 30px;
 }
 
 #cardsContainer {
     margin-top: 20px;
 }
 
+#end .row {
+    margin-top: 35px;
+}
+
 #nameContainer {
     margin-top: 10px;
-}
-
-#name {
-    margin-top: 15px;
-}
-
-#name label {
-    color: white;
 }
 
 #home {
     margin-top: 20px;
 }
 
+#lbOptionsRow {
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
 
 /* just below large - mobile + tablet devices  */
 @media screen and (max-width: 992px) {
@@ -207,10 +224,8 @@ nav {
     #landing, #end, #leaderboard {
         padding: 20px 10px;
     }
-}
 
-/* @media only screen and (orientation: landscape) {
-    .cardRow .s2 .card img {
-        height: 100px;
+    h1 {
+        font-size: 34px;
     }
-} */
+}
