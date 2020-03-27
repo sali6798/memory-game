@@ -1,8 +1,8 @@
-$(document).ready(function() {
-    // needed to initialize form select 
+$(document).ready(function () {
+    // needed to initialize form select for Materialize
     $('select').formSelect();
 
-    //====================== global variables ==========================================
+    //====================== GLOBAL VARIABLES ==========================================
     var topic = "";
     var difficulty = "easy";
     var timer = 0;
@@ -10,87 +10,277 @@ $(document).ready(function() {
     var matchesLeft = 0;
     var isCardOne = true;
     var cardOne;
+    var photoArray = [];
+    var numCols = 0;
+    var numRows = 0;
+    var boardType = "";
 
-    //================== BELOW THIS IS BUTTON/GET INPUT VALUE EVENT LISTENERS ==================
-
-    // loads end page, ask for user's name
-    function loadEndPage() {
-        $("#game").addClass("hide");
-        $("#back").addClass("hide");
-        $("#end").removeClass("hide");
-
-        if (timer === 0) {
-            $("#endMessage").text("Time is up!");
+    //============================ LEADERBOARD SET UP ===============================
+    //save data to local storage
+    function saveScore(entry) {
+        if (localStorage[difficulty]) {
+            var existingLocalStorage = localStorage.getItem(difficulty);
+            var structuredData = JSON.parse(existingLocalStorage);
+            structuredData.push(entry)
+            var str = JSON.stringify(structuredData);
+            localStorage.setItem(difficulty, str)
         } else {
-            $("#endMessage").text("You won!");
+            var str = JSON.stringify([entry]);
+            localStorage.setItem(difficulty, str);
         }
-        $("#finalScore").text(score);
+    }
 
+    // add user score to leaderboard
+    function addScore(name, userScore) {
+        var entry = new Entry(name, userScore);
+        saveScore(entry);
+
+        function Entry(name, userScore) {
+            this.name = name;
+            this.score = userScore;
+        }
+    }
+
+    // get the leaderboard for the right difficulty level
+    function getLeaderboard(currentDifficulty) {
+        var str = localStorage.getItem(currentDifficulty);
+        entries = JSON.parse(str);
+        if (!entries) {
+            entries = [];
+        }
+
+        function dynamicSort(property) {
+            var sortOrder = -1;
+            if (property[0] === "-") {
+                sortOrder = 1;
+                property = property.substr(1);
+            }
+            return function (a, b) {
+
+                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+                return result * sortOrder;
+            }
+        }
+        entries.sort(dynamicSort("score"));
+    }
+
+    // creates a new row in the leaderboard table with the data set
+    function createRow(rank, userName, userScore) {
+        var newTag = $("<tr>");
+        var newTagUserrank = $("<td>").text(rank);
+        var newTagUsername = $("<td>").text(userName);
+        var newTagUserscore = $("<td>").text(userScore);
+        newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
+        return newTag;
+    }
+
+    // display top 10 scores on leaderboard from hall of fame button
+    // on landing
+    function displayHOFLeaderboard() {
+        var leaderBoard = $("#leaderboardRows");
+        leaderBoard.empty();
+        let rank = 1;
+
+        // only displays the top 10 users
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var userName = entry.name;
+            var userScore = entry.score;
+
+            leaderBoard.append(createRow(rank, userName, userScore));
+
+            // put equal scores as the same ranking
+            if (i !== (entries.length - 1) && userScore !== entries[i + 1].score) {
+                rank++;
+            }
+
+            if (rank === 11) {
+                break;
+            }
+        }
+    }
+
+    // leaderboard to be displayed after the game is ended
+    function displayEndGameLeaderboard() {
+        var leaderBoard = $("#leaderboardRows");
+        leaderBoard.empty();
+        let rank = 1;
+        var isUserDisplayed = false;
+        var isHighlighted = false;
+
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var userName = entry.name;
+            var userScore = entry.score;
+
+            // checks if current entry is the same as the user
+            if (userName === $("#name").val() && userScore === score) {
+                isUserDisplayed = true;
+            }
+
+            // only append a row to the leaderboard if it's the top
+            // 10 scores or only the user's score if the rank
+            // has reached past 10
+            if (rank <= 10 || isUserDisplayed) {
+                var row = createRow(rank, userName, userScore);
+                // highlights the user's score
+                if (isUserDisplayed && !isHighlighted) {
+                    row.css("background", "rgba(46, 139, 86, 0.8)");
+                    isHighlighted = true;
+                }
+                leaderBoard.append(row);
+            }
+
+            // puts equal scores on equal ranking
+            if (i !== (entries.length - 1) && userScore !== entries[i + 1].score) {
+                rank++;
+            }
+
+            // makes sure to exit loop after the user has been displayed
+            // and there's at least the top 10 rankings showing
+            if (isUserDisplayed && rank >= 11) {
+                break;
+            }
+        }
+    }
+
+    // for hall of fame button on landing, if user does npt
+    // choose an option the easy leaderboard will be displayed
+    function displayHOF() {
+        var userChoice = $("#lbOptions").val();
+        // if no option chosen, display easy leaderboard
+        if (userChoice === null) {
+            getLeaderboard("easy");
+        }
+        else {
+            getLeaderboard(userChoice);
+        }
+        displayHOFLeaderboard();
+    }
+
+    // called when user submits name
+    function submitScore() {
+        var currentUser = $("#name").val();
+        var currentScore = score;
+        addScore(currentUser, currentScore);
+        getLeaderboard(difficulty);
+        displayEndGameLeaderboard();
+
+        $("#end").addClass("hide");
+        $("#leaderboard").removeClass("hide");
+        $("#lbOptionsRow").addClass("hide");
+    }
+
+    //========================= GAME SET UP ===================================
+    // gets the APIs for the topic user chose
+    function setGameTopic(numCards) {
+        switch (topic) {
+            case "dogs":
+                getPexelsDog(numCards);
+                break;
+            case "cats":
+                getCat(numCards);
+                break;
+            default:
+                getLandscape(numCards);
+                break;
+        }
+    }
+
+    // sets all the values needed to 
+    // start up the game
+    function setGame() {
+        // user's chosen difficulty
+        userDifficulty = $("#difficulty").val();
+        if (userDifficulty !== null) {
+            difficulty = userDifficulty;
+        }
+
+        // user's chosen topic
+        topic = $("#topic").val();
+
+        switch (difficulty) {
+            case "moderate":
+                timer = 150;    // 5x4: timer/matchesLeft === 15 seconds per match allowed
+                matchesLeft = 10;
+                numCols = 5;
+                numRows = 4;
+                boardType = "fiveByFour";
+                break;
+            case "hard":
+                timer = 150;    // 6x5: timer/matchesLeft === 10 seconds per match allowed
+                matchesLeft = 15;
+                numCols = 6;
+                numRows = 5;
+                boardType = "sixByFive";
+                break;
+            default:
+                timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
+                matchesLeft = 6;
+                numCols = 4;
+                numRows = 3;
+                boardType = "fourByThree";
+                break;
+        }
+        setGameTopic(numCols * numRows);
     }
 
     // start game timer
     function startGame() {
-        // starts timer and displays time
-        var timerInterval = setInterval(function() {
+        // starts timer and displays the time every second
+        var timerInterval = setInterval(function () {
             timer--;
             $("#timer").text(timer);
 
+            // if the user exits midgame back to the landing
+            // clear the timer
             if ($("#game").hasClass("hide")) {
                 clearInterval(timerInterval);
-                console.log("done");
             }
-
-            if (timer === 0 || matchesLeft === 0) {
+            else if (timer === 0 || matchesLeft === 0) {
                 clearInterval(timerInterval);
                 loadEndPage();
             }
-
         }, 1000);
-
-        // TODO: update score (global var)
-        // TODO: clear interval/stop timer when user finds all matches first
     }
 
-    function setTimerLength() {
-        difficulty = $("#difficulty").val();
-        if (difficulty === null) {
-            difficulty = "easy";
-        }
-
-        if (difficulty === "moderate") {
-            timer = 5; // 5x4: timer/matchesLeft === 15 seconds per match allowed
-            matchesLeft = 10;
-        } else if (difficulty === "hard") {
-            timer = 5; // 6x5: timer/matchesLeft === 10 seconds per match allowed
-            matchesLeft = 15;
-        } else {
-            //timer = 120; // 4x3: timer/matchesLeft === 20 seconds per match allowed
-            timer = 2
-            matchesLeft = 6;
-        }
+    // makes a new card in the grid
+    function makeCard(newRow, pos) {
+        var col = $(`<div class='col ${boardType}'>`);
+        var card = $("<div class='card'>");
+        var cardFront = $("<div class='front'>");
+        var cardBack = $("<div class='back card-image'>");
+        var newImg = $(`<img src="${photoArray[pos]}" alt="card pic">`);
+        cardBack.append(newImg);
+        card.append(cardFront, cardBack);
+        col.append(card);
+        newRow.append(col);
+        $(card).flip({
+            trigger: 'manual'
+        });
     }
 
-    function loadGamePage() {
-        $("#landing").addClass("hide");
-        $("#hof").addClass("hide");
-        $("nav").removeClass("hide");
-        $("#game").removeClass("hide");
+    // display the right amount of rows and colmumns 
+    // filled with cards
+    function makeGameBoard() {
+        // keep position in photoArray
+        var pos = 0;
 
-        setTimerLength();
-        $("#timer").text(timer);
-        $("#score").text(score)
-            // TODO: create cards with API
-            // size based on difficulty (global var)
+        // for each row create all the cards, and
+        // then append it to the cardsContainer
+        for (var i = 0; i < numRows; i++) {
+            var newRow = $("<div class='row cardRow'>");
+            for (var j = 0; j < numCols; j++) {
+                makeCard(newRow, pos);
+                pos++;
+            }
+            $("#cardsContainer").append(newRow);
+        }
 
-
-        // if not topic chosen, val will be null - pick random topic
-        topic = $("#topic").val();
-
-
-
-        // countdown before game begins (overlay)
+        // timer for the overlay countdown, starts
+        // as soon as the game board has been loaded
         var secondsLeft = 3;
-        var timerInterval = setInterval(function() {
+        var timerInterval = setInterval(function () {
             $("#countdown").text(secondsLeft);
             if (secondsLeft === 0) {
                 clearInterval(timerInterval);
@@ -99,64 +289,21 @@ $(document).ready(function() {
             }
             secondsLeft--;
         }, 1000);
-
-    }
-    makeGameBoardHard();
-    // TODO: populate rows in leaderboard if difficulty global var
-    // empty, display leaderboard for easy level (default option on view from landing)
-    // otherwise display based on difficulty level saved (after user submits name)
-    // MVP: just get leaderboard working
-    function loadLeaderboard() {
-        // append to #leaderboardRows
-
-
     }
 
-
-
-    function reset() {
-        score = 0;
-        timer = 0;
-        matchesLeft = 0;
-        isCardOne = true;
-        topic = "";
-        difficulty = "easy";
-        $(".card").removeClass("locked");
-        $(".card").removeClass("in-play");
-        $("#overlay").removeClass("hide");
-        $("#back").removeClass("hide");
-        $("#topic").prop("selectedIndex", 0);
-        $("#difficulty").prop('selectedIndex', 0);
-        $("#lbOptions").prop('selectedIndex', 0);
-        $('select').formSelect();
-    }
-
-    function loadLanding() {
-        reset();
-        $("#leaderboard").addClass("hide");
-        $("nav").addClass("hide");
-        $("#hof").removeClass("hide");
-        $("#landing").removeClass("hide");
-    }
-
-    // event listener for User card selection
-    $(".card").click(function() {
-        // ignore clicks on cards already matched up or in play
-        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
-            console.log("card is locked or in-play: " + $(this).find("p").text());
-            return;
+    // shuffles the URLs in the array so that the 
+    // matching pictures aren't next to each other
+    function shuffleArray(array) {
+        // goes through each element in the array
+        // and randomly switches it's place
+        // with another element
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * i)
+            const temp = array[i]
+            array[i] = array[j]
+            array[j] = temp
         }
-
-        // show the image 
-        $(this).flip(true);
-        if (isCardOne) {
-            cardOne = $(this);
-            cardOne.addClass("in-play");
-        } else {
-            setTimeout(evaluateMatch, 1000, $(this));
-        }
-        isCardOne = !isCardOne;
-    });
+    }
 
     function evaluateMatch(cardTwo) {
         // this is the second card, lets compare the two
@@ -187,583 +334,173 @@ $(document).ready(function() {
         $("#score").text(score);
     }
 
-    // event listeners
+    function checkCardSelection() {
+        // ignore clicks on cards already matched up or in play
+        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
+            console.log("card is locked or in-play: " + $(this).find("p").text());
+            return;
+        }
+
+        // show the image 
+        $(this).flip(true);
+        if (isCardOne) {
+            cardOne = $(this);
+            cardOne.addClass("in-play");
+        } else {
+            setTimeout(evaluateMatch, 1000, $(this));
+        }
+        isCardOne = !isCardOne;
+    }
+
+    //================== PAGE DISPLAYS ============================
+    // hide everything on the page and display
+    // the nav, game container, score, and timer 
+    function loadGamePage() {
+        $("#landing").addClass("hide");
+        $("#hof").addClass("hide");
+        $("nav").removeClass("hide");
+        $("#game").removeClass("hide");
+
+        setGame();
+        $("#timer").text(timer);
+        $("#score").text(score)
+    }
+
+    // reset all values so it's ready
+    // for when the game is played again
+    function reset() {
+        score = 0;
+        timer = 0;
+        matchesLeft = 0;
+        isCardOne = true;
+        topic = "";
+        difficulty = "easy";
+        photoArray = [];
+        $(".card").removeClass("locked");
+        $(".card").removeClass("in-play");
+        $("#overlay").removeClass("hide");
+        $("#back").removeClass("hide");
+        $("#cardsContainer").empty();
+        $("#topic").prop("selectedIndex", 0);
+        $("#difficulty").prop('selectedIndex', 0);
+        $("#lbOptions").prop('selectedIndex', 0);
+        $('select').formSelect();
+    }
+
+    // load landing page coming from game or leaderboard
+    function loadLanding() {
+        reset();
+        $("#leaderboard").addClass("hide");
+        $("nav").addClass("hide");
+        $("#hof").removeClass("hide");
+        $("#landing").removeClass("hide");
+    }
+
+    // loads end page and displays their final score
+    function loadEndPage() {
+        $("#game").addClass("hide");
+        $("#back").addClass("hide");
+        $("#end").removeClass("hide");
+
+        if (timer === 0) {
+            $("#endMessage").text("Time is up!");
+        }
+        else {
+            $("#endMessage").text("You won!");
+        }
+        $("#finalScore").text(score);
+    }
+
+    //====================================== API CALLS =========================================
+    function getCat(numCards) {
+        catUrl = "https://api.thecatapi.com/v1/images/search?limit=15&apikey=5767aba7-30b0-4677-a169-9bd06be152b8";
+
+        $.ajax({
+            url: catUrl,
+            method: "GET"
+        }).then(function (response) {
+            // since the cards come in pairs, only need to get
+            // pictures for half the number of cards and
+            // push it twice into the array
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response[i].url);
+                photoArray.push(response[i].url);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+    }
+
+    function getPexelsDog(numCards) {
+        var rand = Math.floor(Math.random() * 200 + 1);
+        pexelsUrl = "https://api.pexels.com/v1/search?query=dogs+query&per_page=15&page=" + rand;
+
+        $.ajax({
+            url: pexelsUrl,
+            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
+            method: "GET",
+            type: "text/json"
+        }).then(function (response) {
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response.photos[i].src.original);
+                photoArray.push(response.photos[i].src.original);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+
+    }
+
+    function getLandscape(numCards) {
+        var rand = Math.floor(Math.random() * 200 + 1);
+        pexelsUrl = "https://api.pexels.com/v1/search?query=landscape+query&per_page=15&page=" + rand;
+
+        $.ajax({
+            url: pexelsUrl,
+            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
+            method: "GET",
+            type: "text/json"
+        }).then(function (response) {
+            for (var i = 0; i < numCards / 2; i++) {
+                photoArray.push(response.photos[i].src.original);
+                photoArray.push(response.photos[i].src.original);
+            }
+
+            shuffleArray(photoArray);
+            makeGameBoard();
+        });
+    }
+
+    //======================= EVENT LISTENERS =========================
+    $(document).on("click", ".card", checkCardSelection);
     $("#start").click(loadGamePage);
     $("#home").click(loadLanding);
-    $("#back").click(function() {
+    $("#submit").click(submitScore);
+    $("#back").click(function () {
         $("#game").addClass("hide");
         loadLanding();
     });
-    $(".brand-logo").click(function() {
+
+    $(".brand-logo").click(function () {
         $("#game").addClass("hide");
         loadLanding();
-    })
-
-    //================================== BELOW THIS IS LEADERBOARD CODE =========================================
-
-    // TODO: add user score to leaderboard
-    function addNewTodoWithName(name, score) {
-        var todo = new Todo(name, score);
-        saveTodos(todo);
-
-        function Todo(name, score) {
-            this.name = name;
-            this.complete = score;
-        }
-    }
-
-    //save data to local storage
-
-    function saveTodos(todo) {
-        console.log("difficulty " + difficulty);
-        if (localStorage[difficulty]) {
-            var existingLocalStorage = localStorage.getItem(difficulty)
-            var structuredData = JSON.parse(existingLocalStorage)
-            structuredData.push(todo)
-            var str = JSON.stringify(structuredData);
-            localStorage.setItem(difficulty, str)
-        } else {
-            console.log("hello");
-            var str = JSON.stringify([todo]);
-            localStorage.setItem(difficulty, str);
-        }
-    }
-
-
-
-    function getTodos(currentDifficulty) {
-        var str = "";
-        // for hall of fame button on landing, if user does npt
-        // choose an option the easy leaderboard will be displayed
-        if (currentDifficulty === null) {
-            str = localStorage.getItem("easy");
-        } else {
-            str = localStorage.getItem(currentDifficulty);
-        }
-        todos = JSON.parse(str);
-        if (!todos) {
-            todos = []
-        }
-
-        function dynamicSort(property) {
-            var sortOrder = -1;
-            if (property[0] === "-") {
-                sortOrder = 1;
-                property = property.substr(1);
-            }
-            return function(a, b) {
-
-                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-                return result * sortOrder;
-            }
-        }
-        todos.sort(dynamicSort("complete"))
-        todos.length = 10
-    }
-
-    function listTodos() {
-        var leaderBoard = $("#leaderboardRows");
-        leaderBoard.empty();
-        let j = 0;
-
-        for (var i in todos) {
-            j++;
-            var todo = todos[i];
-            var name = todo.name;
-            var completed = todo.complete;
-
-            var newTag = $("<tr>");
-            var newTagUserrank = $("<td>").text(j);
-            var newTagUsername = $("<td>").text(name);
-            var newTagUserscore = $("<td>").text(completed);
-            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
-            leaderBoard.append(newTag);
-        }
-    }
-
-
-
-    function displayHOF() {
-        getTodos($("#lbOptions").val());
-        listTodos();
-    }
-
-    $("#submit").click(function() {
-        var currentUser = $("#name").val();
-        var currentScore = score;
-        addNewTodoWithName(currentUser, currentScore);
-        getTodos(difficulty);
-        listTodos();
-
-        $("#end").addClass("hide");
-        $("#leaderboard").removeClass("hide");
-        $("#lbOptionsRow").addClass("hide");
     });
-    $("#hof").click(function() {
+
+    // if someone wants to sumbit their name by pressing enter
+    $("#name").keyup(function (event) {
+        if (event.keyCode === 13) {
+            submitScore();
+        }
+    });
+
+    $("#hof").click(function () {
         $("#landing").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
         displayHOF();
     });
 
-    $("#lbOptions").change(function() {
-        displayHOF();
-    });
-
-
-    //================================== BELOW THIS IS API CALLS =========================================
-
-    $(".card").flip({
-        trigger: 'manual'
-    });
-    // getPexelsDog();
-    // getCat();
-    getLandscape();
-    var photoArray = [];
-
-    var imgTag = $("img");
-
-
-
-    function makeGameBoard() {
-        var newRow = $("<div class='row cardRow'>");
-        var newRow2 = $("<div class='row cardRow'>");
-        var newRow3 = $("<div class='row cardRow'>");
-        for (let i = 0; i < 4; i++) {
-            var newCol = $("<div class='col fourByThree'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow.append(newCol);
-        }
-        $("#cardsContainer").append(newRow)
-        for (let i = 0; i < 4; i++) {
-            var newCol = $("<div class='col fourByThree'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow2.append(newCol);
-        }
-        $("#cardsContainer").append(newRow2)
-
-        for (let i = 0; i < 4; i++) {
-            var newCol = $("<div class='col fourByThree'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow3.append(newCol);
-        }
-        $("#cardsContainer").append(newRow3);
-
-    }
-
-    function makeGameBoardModerate() {
-        var newRow = $("<div class='row cardRow'>");
-        var newRow2 = $("<div class='row cardRow'>");
-        var newRow3 = $("<div class='row cardRow'>");
-        var newRow4 = $("<div class='row cardRow'>");
-        for (let i = 0; i < 5; i++) {
-            var newCol = $("<div class='col fiveByFour'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow.append(newCol);
-        }
-        $("#cardsContainer").append(newRow)
-        for (let i = 0; i < 5; i++) {
-            var newCol = $("<div class='col fiveByFour'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow2.append(newCol);
-        }
-        $("#cardsContainer").append(newRow2)
-
-        for (let i = 0; i < 5; i++) {
-            var newCol = $("<div class='col fiveByFour'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow3.append(newCol);
-        }
-        $("#cardsContainer").append(newRow3);
-        for (let i = 0; i < 5; i++) {
-            var newCol = $("<div class='col fiveByFour'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow4.append(newCol);
-        }
-        $("#cardsContainer").append(newRow4);
-
-    }
-
-
-
-
-    function makeGameBoardHard() {
-        var newRow = $("<div class='row cardRow'>");
-        var newRow2 = $("<div class='row cardRow'>");
-        var newRow3 = $("<div class='row cardRow'>");
-        var newRow4 = $("<div class='row cardRow'>");
-        var newRow5 = $("<div class='row cardRow'>");
-
-        for (let i = 0; i < 6; i++) {
-            var newCol = $("<div class='col sixByFive'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow.append(newCol);
-        }
-
-        $("#cardsContainer").append(newRow)
-        for (let i = 0; i < 6; i++) {
-            var newCol = $("<div class='col sixByFive'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow2.append(newCol);
-        }
-
-        $("#cardsContainer").append(newRow2)
-
-        for (let i = 0; i < 6; i++) {
-            var newCol = $("<div class='col sixByFive'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow3.append(newCol);
-        }
-
-        $("#cardsContainer").append(newRow3);
-        for (let i = 0; i < 6; i++) {
-            var newCol = $("<div class='col sixByFive'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow4.append(newCol);
-        }
-
-        $("#cardsContainer").append(newRow4);
-        for (let i = 0; i < 6; i++) {
-            var newCol = $("<div class='col sixByFive'>");
-            var newCard = $("<div class='card'>");
-            var newFront = $("<div class='front card-content'>");
-            var newFrontP = $("<p>");
-            newFrontP.text("I'm a Placeholder")
-            var newBack = $("<div class='back card-image'>");
-            var newImg = $("<img>");
-            newBack.append(newImg);
-            newFront.append(newFrontP);
-            newCard.append(newFront, newBack);
-            newCol.append(newCard);
-            newRow5.append(newCol);
-        }
-
-        $("#cardsContainer").append(newRow5);
-
-
-    }
-
-
-
-
-
-
-
-
-
-    function setPhotos(array, element) {
-        $(element).each(function(index) {
-            $(this).attr({ "src": array[index], "data-": index })
-        })
-    }
-
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * i)
-            const temp = array[i]
-            array[i] = array[j]
-            array[j] = temp
-        }
-    }
-
-
-
-    function getCat() {
-        catUrl = "https://api.thecatapi.com/v1/images/search?limit=15&apikey=5767aba7-30b0-4677-a169-9bd06be152b8";
-
-
-
-        $.ajax({
-            url: catUrl,
-            method: "GET"
-        }).then(function(response) {
-            $(imgTag).each(function(index) {
-
-                if (index < 2) {
-                    photoArray.push(response[0].url);
-                } else if (index >= 2 && index < 4) {
-                    photoArray.push(response[1].url)
-                } else if (index >= 4 && index < 6) {
-                    photoArray.push(response[2].url)
-                } else if (index >= 6 && index < 8) {
-                    photoArray.push(response[3].url)
-                } else if (index >= 8 && index < 10) {
-                    photoArray.push(response[4].url)
-                } else if (index >= 10 && index < 12) {
-                    photoArray.push(response[5].url)
-                } else if (index >= 12 && index < 14) {
-                    photoArray.push(response[6].url)
-                } else if (index >= 14 && index < 16) {
-                    photoArray.push(response[7].url)
-                } else if (index >= 16 && index < 18) {
-                    photoArray.push(response[8].url)
-                } else if (index >= 18 && index < 20) {
-                    photoArray.push(response[9].url)
-                } else if (index >= 20 && index < 22) {
-                    photoArray.push(response[10].url)
-                } else if (index >= 22 && index < 24) {
-                    photoArray.push(response[11].url)
-                } else if (index >= 24 && index < 26) {
-                    photoArray.push(response[12].url)
-                } else if (index >= 26 && index < 28) {
-                    photoArray.push(response[13].url)
-                } else if (index >= 28 && index < 30) {
-                    photoArray.push(response[14].url)
-                }
-
-            })
-
-            shuffleArray(photoArray);
-            setPhotos(photoArray, imgTag);
-        })
-
-
-    }
-
-
-
-
-
-
-
-
-    function getPexelsDog() {
-        var rand = Math.floor(Math.random() * 200 + 1);
-        pexelsUrl = "https://api.pexels.com/v1/search?query=dogs&page=" + rand;
-
-        $.ajax({
-            url: pexelsUrl,
-            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
-            method: "GET",
-            type: "text/json"
-        }).then(function(response) {
-            $(imgTag).each(function(index) {
-
-                if (index < 2) {
-                    photoArray.push(response.photos[0].src.original)
-                } else if (index >= 2 && index < 4) {
-                    photoArray.push(response.photos[1].src.original)
-                } else if (index >= 4 && index < 6) {
-                    photoArray.push(response.photos[2].src.original)
-                } else if (index >= 6 && index < 8) {
-                    photoArray.push(response.photos[3].src.original)
-                } else if (index >= 8 && index < 10) {
-                    photoArray.push(response.photos[4].src.original)
-                } else if (index >= 10 && index < 12) {
-                    photoArray.push(response.photos[5].src.original)
-                } else if (index >= 12 && index < 14) {
-                    photoArray.push(response.photos[6].src.original)
-                } else if (index >= 14 && index < 16) {
-                    photoArray.push(response.photos[7].src.original)
-                } else if (index >= 16 && index < 18) {
-                    photoArray.push(response.photos[8].src.original)
-                } else if (index >= 18 && index < 20) {
-                    photoArray.push(response.photos[9].src.original)
-                } else if (index >= 20 && index < 22) {
-                    photoArray.push(response.photos[10].src.original)
-                } else if (index >= 22 && index < 24) {
-                    photoArray.push(response.photos[11].src.original)
-                } else if (index >= 24 && index < 26) {
-                    photoArray.push(response.photos[12].src.original)
-                } else if (index >= 26 && index < 28) {
-                    photoArray.push(response.photos[13].src.original)
-                } else if (index >= 28 && index < 30) {
-                    photoArray.push(response.photos[14].src.original)
-                }
-
-
-
-            })
-
-            shuffleArray(photoArray);
-            setPhotos(photoArray, imgTag);
-
-        });
-
-    }
-
-    function getLandscape() {
-        var rand = Math.floor(Math.random() * 200 + 1);
-        pexelsUrl = "https://api.pexels.com/v1/search?query=landscape&page=" + rand;
-
-        $.ajax({
-            url: pexelsUrl,
-            headers: { "Authorization": "563492ad6f9170000100000189da3e3e71c041369167af3e07e5a355" },
-            method: "GET",
-            type: "text/json"
-        }).then(function(response) {
-            $(imgTag).each(function(index) {
-
-                if (index < 2) {
-                    photoArray.push(response.photos[0].src.original)
-                } else if (index >= 2 && index < 4) {
-                    photoArray.push(response.photos[1].src.original)
-                } else if (index >= 4 && index < 6) {
-                    photoArray.push(response.photos[2].src.original)
-                } else if (index >= 6 && index < 8) {
-                    photoArray.push(response.photos[3].src.original)
-                } else if (index >= 8 && index < 10) {
-                    photoArray.push(response.photos[4].src.original)
-                } else if (index >= 10 && index < 12) {
-                    photoArray.push(response.photos[5].src.original)
-                } else if (index >= 12 && index < 14) {
-                    photoArray.push(response.photos[6].src.original)
-                } else if (index >= 14 && index < 16) {
-                    photoArray.push(response.photos[7].src.original)
-                } else if (index >= 16 && index < 18) {
-                    photoArray.push(response.photos[8].src.original)
-                } else if (index >= 18 && index < 20) {
-                    photoArray.push(response.photos[9].src.original)
-                } else if (index >= 20 && index < 22) {
-                    photoArray.push(response.photos[10].src.original)
-                } else if (index >= 22 && index < 24) {
-                    photoArray.push(response.photos[11].src.original)
-                } else if (index >= 24 && index < 26) {
-                    photoArray.push(response.photos[12].src.original)
-                } else if (index >= 26 && index < 28) {
-                    photoArray.push(response.photos[13].src.original)
-                } else if (index >= 28 && index < 30) {
-                    photoArray.push(response.photos[14].src.original)
-                }
-
-            })
-
-            shuffleArray(photoArray);
-            console.log(photoArray);
-            setPhotos(photoArray, imgTag);
-
-        });
-
-    }
-
-    // function getMovie() {
-    //     var theMovie = "star wars";
-
-    //     var queryUrl = "https://www.omdbapi.com/?t=" + theMovie + "&type=movie&apikey=trilogy";
-
-    //     $.ajax({
-    //         url: queryUrl,
-    //         method: "GET"
-    //     }).then(function (response) {
-    //         console.log(response);
-    //         console.log(response.Poster)
-    //     })
-
-    // }
-
-
-    // function getNASA() {
-    //     var randomYear = Math.floor(Math.random() * (2020 - 2015) + 2010);
-    //     var randomMonth = Math.floor(Math.random() * (12 - 1) + 1);
-    //     var randomDate = Math.floor(Math.random() * (28 - 1) + 1);
-    //     var NASAUrl = `https://api.nasa.gov/planetary/apod?date=${randomYear}-${randomMonth}-${randomDate}&api_key=2YVxSEGEXJwH01Wb6QwvfeJyAWtXzKRNBVhIbVJb`
-
-
-    //     $.ajax({
-    //         url: NASAUrl,
-    //         method: "GET"
-    //     }).then(function (response) {
-    //         console.log(response.url);
-    //     })
-    // }
-
-})
+    $("#lbOptions").change(displayHOF);
+});
