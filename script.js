@@ -447,8 +447,11 @@ $(document).ready(function () {
             var baseScore = score;
             var timeBonus = timer * timeBonusFactor;
             score = baseScore + timeBonus;
-            var displayMsg = baseScore + " plus Time Bonus of " + timeBonus + " = " + score + "!";
-            $("#finalScore").text(displayMsg);
+            // var displayMsg = baseScore + " plus Time Bonus of " + timeBonus + " = " + score + "!";
+            var bonusMsg = $("<br><small>").text(`(That's a +${timeBonus} Time Bonus!)`);
+            // var displayMsg = score;
+            $("#finalScore").text(score);
+            $("#finalScore").append(bonusMsg);
         }
     }
 
