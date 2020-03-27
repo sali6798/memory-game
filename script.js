@@ -8,8 +8,9 @@ $(document).ready(function () {
     var timer = 0;
     var score = 0;
     var matchesLeft = 0;
-    var isCardOne = true;
     var cardOne;
+    var cardsClicked = 0;
+    var timeBonusFactor = 1;
     var photoArray = [];
     var numCols = 0;
     var numRows = 0;
@@ -206,6 +207,7 @@ $(document).ready(function () {
                 numCols = 5;
                 numRows = 4;
                 boardType = "fiveByFour";
+                timeBonusFactor = 2;
                 break;
             case "hard":
                 timer = 150;    // 6x5: timer/matchesLeft === 10 seconds per match allowed
@@ -213,6 +215,7 @@ $(document).ready(function () {
                 numCols = 6;
                 numRows = 5;
                 boardType = "sixByFive";
+                timeBonusFactor = 3;
                 break;
             default:
                 timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
@@ -220,6 +223,7 @@ $(document).ready(function () {
                 numCols = 4;
                 numRows = 3;
                 boardType = "fourByThree";
+                timeBonusFactor = 1;
                 break;
         }
         setGameTopic(numCols * numRows);
@@ -251,6 +255,7 @@ $(document).ready(function () {
         var cardFront = $("<div class='front'>");
         var cardBack = $("<div class='back card-image'>");
         var newImg = $(`<img src="${photoArray[pos]}" alt="card pic">`);
+        newImg.attr("data-board-position", pos); // for evaluating if the user is clicking the same card
         cardBack.append(newImg);
         card.append(cardFront, cardBack);
         col.append(card);
@@ -306,50 +311,70 @@ $(document).ready(function () {
     }
 
     function evaluateMatch(cardTwo) {
-        // this is the second card, lets compare the two
-        var cardTwoID = cardTwo.find("img").attr("src");
+        // this is the second card, let's compare with the first
+        var cardTwoIndex = cardTwo.find("img").data("board-position");
+        var cardOneIndex = cardOne.find("img").data("board-position");
         var cardOneID = cardOne.find("img").attr("src");
+        var cardTwoID = cardTwo.find("img").attr("src");
 
-        if (cardOneID === cardTwoID) {
+        // console.log(`evaluateMatch cardOne ${cardOneIndex} cardTwo ${cardTwoIndex}`);
+
+        if (cardOneIndex === cardTwoIndex) {
+            // ignore when the user is just clicking the same picture repeatedly
+            // console.log("cardsClicked: " + cardsClicked + " user flipped the same card again: " + cardOneID);
+            cardOne.flip(false);
+            cardsClicked = 0;
+            return;
+        } else if (cardOneID === cardTwoID) {
             // a match, add some points!
             score += 5;
             matchesLeft--;
-
+            
             // and keep the cards from flipping again
             cardOne.addClass("locked");
             cardTwo.addClass("locked");
         } else {
             // uh-oh, lose some points
             score -= 1;
-
+            
             // flip the cards back for another try
             cardTwo.flip(false);
             cardOne.flip(false);
         }
 
-        // whether it was a match or not, cardOne is no longer in-play
-        cardOne.removeClass("in-play");
+        // whether it was a match or not, begin again with first card
+        cardsClicked = 0;
 
         // update on-screen score
         $("#score").text(score);
     }
 
     function checkCardSelection() {
-        // ignore clicks on cards already matched up or in play
-        if ($(this).hasClass("locked") || $(this).hasClass("in-play")) {
-            console.log("card is locked or in-play: " + $(this).find("p").text());
+        // don't evaluated, or flip, already matched cards
+        if ($(this).hasClass("locked")) {
+            // console.log("cardsClicked: " + cardsClicked + " card is locked: " + $(this).find("img").data("board-position"));
             return;
         }
 
-        // show the image 
-        $(this).flip(true);
-        if (isCardOne) {
-            cardOne = $(this);
-            cardOne.addClass("in-play");
-        } else {
-            setTimeout(evaluateMatch, 1000, $(this));
+        // increment a card counter and show the picture if card one or card two
+        cardsClicked++;
+        if (cardsClicked < 3) {
+            // console.log("cardsClicked: " + cardsClicked + " flip this card: " + $(this).find("img").data("board-position"));
+            $(this).flip(true);
         }
-        isCardOne = !isCardOne;
+
+        var thisIsThis = $(this);
+
+        // if cardsClicked === 2, evaluate for a match
+        if (cardsClicked === 2) {
+            // delay the start of evaluation so the second card is visible to the user
+            // 1000 ms was too long, 500 ms was not quite long enough to show the whole image
+            setTimeout(function () {
+                evaluateMatch(thisIsThis);
+            }, 700); 
+        } else if (cardsClicked === 1) {
+            cardOne = thisIsThis;
+        }
     }
 
     //================== PAGE DISPLAYS ============================
@@ -372,12 +397,13 @@ $(document).ready(function () {
         score = 0;
         timer = 0;
         matchesLeft = 0;
-        isCardOne = true;
+        // isCardOne = true;
+        cardsClicked = 0;
+        timeBonusFactor = 1;
         topic = "";
         difficulty = "easy";
         photoArray = [];
         $(".card").removeClass("locked");
-        $(".card").removeClass("in-play");
         $("#overlay").removeClass("hide");
         $("#back").removeClass("hide");
         $("#cardsContainer").empty();
@@ -409,6 +435,21 @@ $(document).ready(function () {
             $("#endMessage").text("You won!");
         }
         $("#finalScore").text(score);
+        displayFinalScore();
+    }
+
+    function displayFinalScore() {
+        if(timer === 0){
+            // just display the current score as-is, no time bonus will be applied
+            $("#finalScore").text(score);
+        } else {
+            // give this player some bonus!
+            var baseScore = score;
+            var timeBonus = timer * timeBonusFactor;
+            score = baseScore + timeBonus;
+            var displayMsg = baseScore + " plus Time Bonus of " + timeBonus + " = " + score + "!";
+            $("#finalScore").text(displayMsg);
+        }
     }
 
     //====================================== API CALLS =========================================
