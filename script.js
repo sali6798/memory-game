@@ -317,11 +317,8 @@ $(document).ready(function () {
         var cardOneID = cardOne.find("img").attr("src");
         var cardTwoID = cardTwo.find("img").attr("src");
 
-        // console.log(`evaluateMatch cardOne ${cardOneIndex} cardTwo ${cardTwoIndex}`);
-
         if (cardOneIndex === cardTwoIndex) {
             // ignore when the user is just clicking the same picture repeatedly
-            // console.log("cardsClicked: " + cardsClicked + " user flipped the same card again: " + cardOneID);
             cardOne.flip(false);
             cardsClicked = 0;
             return;
@@ -352,14 +349,12 @@ $(document).ready(function () {
     function checkCardSelection() {
         // don't evaluated, or flip, already matched cards
         if ($(this).hasClass("locked")) {
-            // console.log("cardsClicked: " + cardsClicked + " card is locked: " + $(this).find("img").data("board-position"));
             return;
         }
 
         // increment a card counter and show the picture if card one or card two
         cardsClicked++;
         if (cardsClicked < 3) {
-            // console.log("cardsClicked: " + cardsClicked + " flip this card: " + $(this).find("img").data("board-position"));
             $(this).flip(true);
         }
 
@@ -539,6 +534,7 @@ $(document).ready(function () {
 
     $("#hof").click(function () {
         $("#landing").addClass("hide");
+        $("#hof").addClass("hide");
         $("#leaderboard").removeClass("hide");
         $("#lbOptionsRow").removeClass("hide");
         displayHOF();
