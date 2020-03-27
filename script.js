@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    // needed to initialize form select 
+    // needed to initialize form select for Materialize
     $('select').formSelect();
 
     //====================== GLOBAL VARIABLES ==========================================
@@ -41,6 +41,7 @@ $(document).ready(function () {
         }
     }
 
+    // get the leaderboard for the right difficulty level
     function getLeaderboard(currentDifficulty) {
         var str = localStorage.getItem(currentDifficulty);
         entries = JSON.parse(str);
@@ -61,36 +62,85 @@ $(document).ready(function () {
             }
         }
         entries.sort(dynamicSort("score"));
-        // entries.length = 10
     }
 
-    // TODO: populate rows in leaderboard if difficulty global var
-    // empty, display leaderboard for easy level (default option on view from landing)
-    // otherwise display based on difficulty level saved (after user submits name)
-    function displayLeaderboard() {
+    // creates a new row in the leaderboard table with the data set
+    function createRow(rank, userName, userScore) {
+        var newTag = $("<tr>");
+        var newTagUserrank = $("<td>").text(rank);
+        var newTagUsername = $("<td>").text(userName);
+        var newTagUserscore = $("<td>").text(userScore);
+        newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
+        return newTag;
+    }
+
+    // display top 10 scores on leaderboard from hall of fame button
+    // on landing
+    function displayHOFLeaderboard() {
         var leaderBoard = $("#leaderboardRows");
         leaderBoard.empty();
-        let j = 1;
+        let rank = 1;
+
+        // only displays the top 10 users
         for (var i = 0; i < entries.length; i++) {
             var entry = entries[i];
             var userName = entry.name;
             var userScore = entry.score;
 
-            if (i !== 0 && userScore !== entries[i - 1].score) {
-                j++;
+            leaderBoard.append(createRow(rank, userName, userScore));
+
+            // put equal scores as the same ranking
+            if (i !== (entries.length - 1) && userScore !== entries[i + 1].score) {
+                rank++;
             }
 
-            var newTag = $("<tr>");
-            var newTagUserrank = $("<td>").text(j);
-            var newTagUsername = $("<td>").text(userName);
-            var newTagUserscore = $("<td>").text(userScore);
-            // highlights the current user's score when leaderboard is
-            // displayed after the game is ended
-            if (userName === $("#name").val() && userScore === score) {
-                newTag.css("background", "rgba(46, 139, 86, 0.8)");
+            if (rank === 11) {
+                break;
             }
-            newTag.append(newTagUserrank, newTagUsername, newTagUserscore);
-            leaderBoard.append(newTag);
+        }
+    }
+
+    // leaderboard to be displayed after the game is ended
+    function displayEndGameLeaderboard() {
+        var leaderBoard = $("#leaderboardRows");
+        leaderBoard.empty();
+        let rank = 1;
+        var isUserDisplayed = false;
+        var isHighlighted = false;
+
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            var userName = entry.name;
+            var userScore = entry.score;
+
+            // checks if current entry is the same as the user
+            if (userName === $("#name").val() && userScore === score) {
+                isUserDisplayed = true;
+            }
+
+            // only append a row to the leaderboard if it's the top
+            // 10 scores or only the user's score if the rank
+            // has reached past 10
+            if (rank <= 10 || isUserDisplayed) {
+                var row = createRow(rank, userName, userScore);
+                // highlights the user's score
+                if (isUserDisplayed && !isHighlighted) {
+                    row.css("background", "rgba(46, 139, 86, 0.8)");
+                    isHighlighted = true;
+                }
+                leaderBoard.append(row);
+            }
+
+            // puts equal scores on equal ranking
+            if (i !== (entries.length - 1) && userScore !== entries[i + 1].score) {
+                rank++;
+            }
+
+            // makes sure to exit loop after the user has been displayed
+            // and there's at least the top 10 rankings showing
+            if (isUserDisplayed && rank >= 11) {
+                break;
+            }
         }
     }
 
@@ -98,21 +148,23 @@ $(document).ready(function () {
     // choose an option the easy leaderboard will be displayed
     function displayHOF() {
         var userChoice = $("#lbOptions").val();
+        // if no option chosen, display easy leaderboard
         if (userChoice === null) {
             getLeaderboard("easy");
         }
         else {
             getLeaderboard(userChoice);
         }
-        displayLeaderboard();
+        displayHOFLeaderboard();
     }
 
+    // called when user submits name
     function submitScore() {
         var currentUser = $("#name").val();
         var currentScore = score;
         addScore(currentUser, currentScore);
         getLeaderboard(difficulty);
-        displayLeaderboard();
+        displayEndGameLeaderboard();
 
         $("#end").addClass("hide");
         $("#leaderboard").removeClass("hide");
@@ -163,7 +215,7 @@ $(document).ready(function () {
                 boardType = "sixByFive";
                 break;
             default:
-                timer = 3;    // TODO:4x3: timer/matchesLeft === 20 seconds per match allowed
+                timer = 120;    // 4x3: timer/matchesLeft === 20 seconds per match allowed
                 matchesLeft = 6;
                 numCols = 4;
                 numRows = 3;
@@ -420,7 +472,7 @@ $(document).ready(function () {
             makeGameBoard();
         });
     }
-    
+
     //======================= EVENT LISTENERS =========================
     $(document).on("click", ".card", checkCardSelection);
     $("#start").click(loadGamePage);
@@ -437,7 +489,7 @@ $(document).ready(function () {
     });
 
     // if someone wants to sumbit their name by pressing enter
-    $("#name").keyup(function(event) {
+    $("#name").keyup(function (event) {
         if (event.keyCode === 13) {
             submitScore();
         }
